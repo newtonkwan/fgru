@@ -21,7 +21,7 @@ async def on_ready():
         print(command.name)
 
 @bot.command(name="sendto")
-@commands.has_role("Admin")
+@commands.has_role("Oldton")
 async def send_to_channel(ctx, channel_name: str, *, message: str):
     """Send a message to a specific channel by name."""
     channel = discord.utils.get(ctx.guild.channels, name=channel_name)
@@ -37,7 +37,7 @@ async def send_to_channel(ctx, channel_name: str, *, message: str):
 
 
 @bot.command(name="send")
-@commands.has_role("Admin")
+@commands.has_role("Oldton")
 async def send_message(ctx, message: str):
     """Send a custom formatted message."""
     await ctx.send(message)
@@ -60,9 +60,14 @@ async def on_message(message):
                     react = True
                     break
 
+        # Check for X.com links
         if not react:
             if re.search(r"https?://(www\.)?x\.com/[\w\.-]+", message.content):
                 react = True
+
+        # Check for any Imgur links, including direct image links
+        if not react and re.search(r"https?://(i\.)?imgur\.com/[\w\.-]+", message.content):
+            react = True
 
         if react:
             emoji = '<:gz:1219333822731255828>'
