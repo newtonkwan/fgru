@@ -34,7 +34,7 @@ def format_achievement_message(achievement):
     user = achievement['Username']
     skill = achievement['Skill']
     achievement_type = achievement['Type']
-    xp_or_kc = achievement['Xp']
+    xp_or_kc = "{:,}".format(int(achievement['Xp'])) 
 
     if achievement_type == "Pvm":
         if skill == "Clue_all": #custom exception for Colosseum Glory
@@ -44,10 +44,10 @@ def format_achievement_message(achievement):
         else:
             return f"{user} reached {xp_or_kc} KC at {skill}"
     elif achievement_type == "Skill":
-        if skill == 'Ehp':
-            return f"{user} reached {xp_or_kc} EHP"
-        elif skill == 'Ehb':
-            return f"{user} reached {xp_or_kc} EHB"
+        if skill in ['Ehp', 'Ehb']:  # These are usually treated as cumulative counters, not xp
+            return f"{user} reached {xp_or_kc} {skill}"
+        elif skill == "Overall":
+            return f"{user} reached {xp_or_kc} XP {skill}"
         else:
             return f"{user} reached {xp_or_kc} XP in {skill}"
     else:
