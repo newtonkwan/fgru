@@ -1,7 +1,10 @@
 import discord
-from discord.ext import commands
+from discord.ext import commands, tasks
+import json
 import os
 import re
+import requests
+from datetime import datetime
 
 TOKEN = os.getenv('DISCORD_TOKEN')
 if TOKEN is None:
@@ -12,6 +15,44 @@ intents.messages = True
 intents.message_content = True
 bot = commands.Bot(command_prefix='!', intents=intents)
 
+group_id = 2112  # group ID
+
+def save_last_posted_activity(activity_id):
+    with open('last_posted_activity.json', 'w') as f:
+        json.dump({'last_activity_id': activity_id}, f)
+
+def get_last_posted_activity():
+    try:
+        with open('last_posted_activity.json', 'r') as f:
+            data = json.load(f)
+            return data['last_activity_id']
+    except (FileNotFoundError, json.JSONDecodeError):
+        return None
+
+def format_achievement_message(achievement):
+    """Helper function to format an achievement message."""
+    user = achievement['Username']
+    skill = achievement['Skill']
+    achievement_type = achievement['Type']
+    xp_or_kc = achievement['Xp']
+
+    if achievement_type == "Pvm":
+        if skill == "Clue_all": #custom exception for Colosseum Glory
+            return f"{user} completed {xp_or_kc} Clues"
+        elif skill == "Colosseum Glory": #custom exception for Colosseum Glory
+            return f"{user} reached {xp_or_kc} Colosseum Glory"
+        else:
+            return f"{user} reached {xp_or_kc} KC at {skill}"
+    elif achievement_type == "Skill":
+        if skill == 'Ehp':
+            return f"{user} reached {xp_or_kc} EHP"
+        elif skill == 'Ehb':
+            return f"{user} reached {xp_or_kc} EHB"
+        else:
+            return f"{user} reached {xp_or_kc} XP in {skill}"
+    else:
+        return f"{user} reached {xp_or_kc} {skill}"
+
 @bot.event
 async def on_ready():
     print(f'Logged in as {bot.user}')
@@ -19,6 +60,49 @@ async def on_ready():
     print("Commands loaded:")
     for command in bot.commands:
         print(command.name)
+    print()
+    fetch_and_post_latest_activity.start()  # Start the loop
+
+@bot.command(name="latestactivity")
+@commands.has_role("Oldton")
+async def latest_activity(ctx, count: int = 1):
+    """Command to fetch and display the latest group achievement from TempleOSRS API."""
+    if count < 1 or count > 20:
+        await ctx.send("Please provide a count between 1 and 20.")
+        return
+
+    url = f"https://templeosrs.com/api/group_achievements.php?id={group_id}"
+    try:
+        response = requests.get(url)
+        response.raise_for_status()  # This will raise an exception for HTTP errors
+        data = response.json()  # Parse JSON response
+
+        if 'data' in data and data['data']:
+            # Sort achievements by date assuming 'Date' is in a sortable format
+            achievements = sorted(data['data'], key=lambda x: datetime.strptime(x['Date'], '%Y-%m-%d %H:%M:%S'), reverse=True)
+            latest_achievements = achievements[:count]  # Get the latest achievement after sorting
+
+            # Aggregate all messages into one
+            messages = []
+            for achievement in latest_achievements:
+                messages.append(format_achievement_message(achievement))
+
+            # Join all formatted messages into one large message
+            final_message = "\n".join(messages)
+            if len(final_message) > 2000:
+                await ctx.send("The message is too long to send in one go. Consider reducing the number of activities.")
+            else:
+                await ctx.send(final_message)
+
+            # messages = [format_achievement_message(achievement) for achievement in latest_achievements]
+            # for msg in messages:
+            #     await ctx.send(msg)
+
+            # await ctx.send(msg)
+        else:
+            await ctx.send("No data available or group ID not found.")
+    except requests.RequestException as e:
+        await ctx.send(f"Failed to fetch data from API: {str(e)}")
 
 @bot.command(name="sendto")
 @commands.has_role("Oldton")
@@ -41,6 +125,41 @@ async def send_to_channel(ctx, channel_name: str, *, message: str):
 async def send_message(ctx, message: str):
     """Send a custom formatted message."""
     await ctx.send(message)
+
+@tasks.loop(minutes=1)
+async def fetch_and_post_latest_activity():
+    current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")  # Format current time as a string
+    url = f"https://templeosrs.com/api/group_achievements.php?id={group_id}"
+    try:
+        response = requests.get(url)
+        response.raise_for_status()
+        data = response.json()
+
+        if 'data' in data and data['data']:
+            achievements = sorted(data['data'], key=lambda x: datetime.strptime(x['Date'], '%Y-%m-%d %H:%M:%S'), reverse=True)
+            latest_achievement = achievements[0]  # Get the latest achievement after sorting
+
+            # Create a unique identifier for the latest achievement
+            latest_activity_id = f"{latest_achievement['Username']}{latest_achievement['Date']}{latest_achievement['Skill']}"
+
+            # Check if this is the same as the last posted activity
+            if latest_activity_id != get_last_posted_activity():
+                msg = format_achievement_message(latest_achievement)
+                channels = ['bot-testing']
+                for channel_name in channels:
+                    channel = discord.utils.get(bot.get_all_channels(), name=channel_name)
+                    if channel:
+                        await channel.send(msg)
+                # Save the ID of the latest posted activity
+                save_last_posted_activity(latest_activity_id)
+                print(f"{current_time} Posted new activity: {msg}")
+            else:
+                print(f"{current_time} No new activity to post.")
+        else:
+            print("No data available or group ID not found.")
+    except requests.RequestException as e:
+        print(f"Failed to fetch data from API: {str(e)}")
+
 
 @bot.event
 async def on_message(message):
