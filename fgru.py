@@ -94,11 +94,6 @@ async def latest_activity(ctx, count: int = 1):
             else:
                 await ctx.send(final_message)
 
-            # messages = [format_achievement_message(achievement) for achievement in latest_achievements]
-            # for msg in messages:
-            #     await ctx.send(msg)
-
-            # await ctx.send(msg)
         else:
             await ctx.send("No data available or group ID not found.")
     except requests.RequestException as e:
@@ -145,7 +140,7 @@ async def fetch_and_post_latest_activity():
             # Check if this is the same as the last posted activity
             if latest_activity_id != get_last_posted_activity():
                 msg = format_achievement_message(latest_achievement)
-                channels = ['bot-testing']
+                channels = ["bot-testing", "adventure-log"]
                 for channel_name in channels:
                     channel = discord.utils.get(bot.get_all_channels(), name=channel_name)
                     if channel:
