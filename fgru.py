@@ -41,11 +41,13 @@ def format_achievement_message(achievement):
             return f"{user} completed {xp_or_kc} Clues"
         elif skill == "Colosseum Glory": #custom exception for Colosseum Glory
             return f"{user} reached {xp_or_kc} Colosseum Glory"
+        elif skill == 'Ehb':
+            return f"{user} reached {xp_or_kc} EHB"
         else:
             return f"{user} reached {xp_or_kc} KC at {skill}"
     elif achievement_type == "Skill":
-        if skill in ['Ehp', 'Ehb']:  # These are usually treated as cumulative counters, not xp
-            return f"{user} reached {xp_or_kc} {skill}"
+        if skill == 'Ehp':  # These are usually treated as cumulative counters, not xp
+            return f"{user} reached {xp_or_kc} EHP"
         elif skill == "Overall":
             return f"{user} reached {xp_or_kc} XP {skill}"
         else:
