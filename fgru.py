@@ -6,6 +6,13 @@ import re
 import requests
 from datetime import datetime
 
+# TESTING
+DEBUG = True # set to False when deploying
+if DEBUG: 
+    channels = ["bot-testing"]
+else: 
+    channels = ["bot-testing", "adventure-log"]
+
 TOKEN = os.getenv('DISCORD_TOKEN')
 if TOKEN is None:
     raise ValueError("No Discord token found. Please set the DISCORD_TOKEN environment variable.")
@@ -17,25 +24,35 @@ bot = commands.Bot(command_prefix='!', intents=intents)
 
 group_id = 2112  # group ID
 
-def save_last_posted_activity(activity_id):
-    with open('last_posted_activity.json', 'w') as f:
-        json.dump({'last_activity_id': activity_id}, f)
+activity_to_emoji = {
+    'Overall': '<:skilling:1161180798163107880>',
+}
 
-def get_last_posted_activity():
+def save_last_checked_time(timestamp):
+    with open('last_activity_time.json', 'w') as f:
+        json.dump({'last_activity_time': timestamp}, f)
+
+def get_last_checked_time():
     try:
-        with open('last_posted_activity.json', 'r') as f:
+        with open('last_activity_time.json', 'r') as f:
             data = json.load(f)
-            return data['last_activity_id']
+            # Convert the stored string time to a datetime object
+            return datetime.strptime(data['last_activity_time'], "%Y-%m-%d %H:%M:%S")
     except (FileNotFoundError, json.JSONDecodeError):
-        return None
+        # If there's an error, return the earliest possible datetime
+        return datetime.min
 
 def format_achievement_message(achievement):
     """Helper function to format an achievement message."""
     user = achievement['Username']
-    skill = achievement['Skill']
-    achievement_type = achievement['Type']
+    skill = achievement['Skill'] # [Abyssal Sire, Attack, Overall, Ehp, Overall, etc.]
+    achievement_type = achievement['Type']  #[Pvm, Skill]
     xp_or_kc = "{:,}".format(int(achievement['Xp'])) 
 
+    # TODO: Add emojis for each message sent.   
+    # skill = 'Overall'
+    # emoji = activity_to_emoji[skill]
+    # return f"{user} reached {xp_or_kc} {skill} {emoji}"
     if achievement_type == "Pvm":
         if skill == "Clue_all": #custom exception for Colosseum Glory
             return f"{user} completed {xp_or_kc} Clues"
@@ -54,6 +71,7 @@ def format_achievement_message(achievement):
             return f"{user} reached {xp_or_kc} XP in {skill}"
     else:
         return f"{user} reached {xp_or_kc} {skill}"
+
 
 @bot.event
 async def on_ready():
@@ -123,9 +141,11 @@ async def send_message(ctx, message: str):
     """Send a custom formatted message."""
     await ctx.send(message)
 
-@tasks.loop(minutes=1)
+@tasks.loop(seconds=5)
 async def fetch_and_post_latest_activity():
-    current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")  # Format current time as a string
+    current_time = datetime.now()
+    last_checked_time = get_last_checked_time()
+
     url = f"https://templeosrs.com/api/group_achievements.php?id={group_id}"
     try:
         response = requests.get(url)
@@ -133,30 +153,26 @@ async def fetch_and_post_latest_activity():
         data = response.json()
 
         if 'data' in data and data['data']:
-            achievements = sorted(data['data'], key=lambda x: datetime.strptime(x['Date'], '%Y-%m-%d %H:%M:%S'), reverse=True)
-            latest_achievement = achievements[0]  # Get the latest achievement after sorting
+            achievements = sorted(data['data'], key=lambda x: datetime.strptime(x['Date'], "%Y-%m-%d %H:%M:%S"))
+            new_achievements = [a for a in achievements if datetime.strptime(a['Date'], "%Y-%m-%d %H:%M:%S") > last_checked_time]
 
-            # Create a unique identifier for the latest achievement
-            latest_activity_id = f"{latest_achievement['Username']}{latest_achievement['Date']}{latest_achievement['Skill']}"
-
-            # Check if this is the same as the last posted activity
-            if latest_activity_id != get_last_posted_activity():
-                msg = format_achievement_message(latest_achievement)
-                channels = ["bot-testing", "adventure-log"]
-                for channel_name in channels:
-                    channel = discord.utils.get(bot.get_all_channels(), name=channel_name)
-                    if channel:
-                        await channel.send(msg)
-                # Save the ID of the latest posted activity
-                save_last_posted_activity(latest_activity_id)
-                print(f"{current_time} Posted new activity: {msg}")
+            if new_achievements:
+                for achievement in new_achievements:
+                    msg = format_achievement_message(achievement)
+                    for channel_name in channels:
+                        channel = discord.utils.get(bot.get_all_channels(), name=channel_name)
+                        if channel:
+                            await channel.send(msg)
+                
+                # Update the last checked time to the timestamp of the last new achievement processed
+                latest_activity_time = datetime.strptime(new_achievements[-1]['Date'], "%Y-%m-%d %H:%M:%S")
+                save_last_checked_time(latest_activity_time.strftime("%Y-%m-%d %H:%M:%S"))
+                print(f"{current_time.strftime('%Y-%m-%d %H:%M:%S')} - Posted new activities.")
             else:
-                print(f"{current_time} No new activity to post.")
-        else:
-            print("No data available or group ID not found.")
+                print(f"{current_time.strftime('%Y-%m-%d %H:%M:%S')} - No new activities to post.")
+
     except requests.RequestException as e:
         print(f"Failed to fetch data from API: {str(e)}")
-
 
 @bot.event
 async def on_message(message):
