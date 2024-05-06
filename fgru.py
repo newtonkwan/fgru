@@ -1,3 +1,4 @@
+import argparse
 import discord
 from discord.ext import commands, tasks
 import json
@@ -6,11 +7,20 @@ import re
 import requests
 from datetime import datetime
 
-# TESTING
-DEBUG = True # set to False when deploying
-if DEBUG: 
+# Setup argparse to handle command line arguments
+parser = argparse.ArgumentParser(description="Run the Discord bot.")
+parser.add_argument('--debug', action='store_true', help='Run the bot in debug mode')
+args = parser.parse_args()
+
+# Set environment variable based on the presence of the --debug flag
+os.environ['DEBUG'] = 'True' if args.debug else 'False'
+
+# Convert environment variable to a Boolean
+DEBUG = os.getenv('DEBUG', 'False') == 'True'
+
+if DEBUG:
     channels = ["bot-testing"]
-else: 
+else:
     channels = ["bot-testing", "adventure-log"]
 
 TOKEN = os.getenv('DISCORD_TOKEN')
@@ -45,9 +55,11 @@ def get_last_checked_time():
 def format_achievement_message(achievement):
     """Helper function to format an achievement message."""
     user = achievement['Username']
-    skill = achievement['Skill'] # [Abyssal Sire, Attack, Overall, Ehp, Overall, etc.]
+    skill = achievement['Skill'] # [Abyssal Sire, Attack, Ehp, Overall, etc.]
     achievement_type = achievement['Type']  #[Pvm, Skill]
+    milestone = achievement['Milestone']
     xp_or_kc = "{:,}".format(int(achievement['Xp'])) 
+    # return f"{achievement}"
 
     # TODO: Add emojis for each message sent.   
     # skill = 'Overall'
@@ -60,13 +72,23 @@ def format_achievement_message(achievement):
             return f"{user} reached {xp_or_kc} Colosseum Glory"
         elif skill == 'Ehb':
             return f"{user} reached {xp_or_kc} EHB"
+        elif skill == "LMS":
+            return f"{user} reached {xp_or_kc} LMS score"
         else:
             return f"{user} reached {xp_or_kc} KC at {skill}"
     elif achievement_type == "Skill":
         if skill == 'Ehp':  # These are usually treated as cumulative counters, not xp
             return f"{user} reached {xp_or_kc} EHP"
-        elif skill == "Overall":
-            return f"{user} reached {xp_or_kc} XP {skill}"
+        if milestone == "XP": 
+            if skill == "Overall":
+                return f"{user} reached {xp_or_kc} XP {skill}"
+            else: 
+                return f"{user} reached {xp_or_kc} XP in {skill}"
+        if milestone == "Level":
+            if skill == "Overall": 
+                return f"{user} reached {xp_or_kc} Total Level"
+            else:
+                return f"{user} reached Level {xp_or_kc} in {skill}"
         else:
             return f"{user} reached {xp_or_kc} XP in {skill}"
     else:
