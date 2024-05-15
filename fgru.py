@@ -66,8 +66,20 @@ def format_achievement_message(achievement):
     # emoji = activity_to_emoji[skill]
     # return f"{user} reached {xp_or_kc} {skill} {emoji}"
     if achievement_type == "Pvm":
-        if skill == "Clue_all": #custom exception for Colosseum Glory
+        if skill == "Clue_all": #custom exception for All Clues
             return f"{user} completed {xp_or_kc} Clues"
+        elif skill == "Clue_master":
+            return f"{user} completed {xp_or_kc} Master Clues"
+        elif skill == "Clue_elite": 
+            return f"{user} completed {xp_or_kc} Elite Clues"
+        elif skill == "Clue_hard":
+            return f"{user} completed {xp_or_kc} Hard Clues"
+        elif skill == "Clue_medium":
+            return f"{user} completed {xp_or_kc} Medium Clues"
+        elif skill == "Clue_easy":
+            return f"{user} completed {xp_or_kc} Easy Clues"
+        elif skill == "Clue_beginner":
+            return f"{user} completed {xp_or_kc} Beginner Clues"
         elif skill == "Colosseum Glory": #custom exception for Colosseum Glory
             return f"{user} reached {xp_or_kc} Colosseum Glory"
         elif skill == 'Ehb':
