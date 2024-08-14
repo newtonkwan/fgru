@@ -175,7 +175,7 @@ async def send_message(ctx, message: str):
     """Send a custom formatted message."""
     await ctx.send(message)
 
-@tasks.loop(seconds=5)
+@tasks.loop(seconds=60)
 async def fetch_and_post_latest_activity():
     current_time = datetime.now()
     last_checked_time = get_last_checked_time()
