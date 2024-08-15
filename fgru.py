@@ -191,6 +191,19 @@ async def fetch_and_post_latest_activity():
             new_achievements = [a for a in achievements if datetime.strptime(a['Date'], "%Y-%m-%d %H:%M:%S") > last_checked_time]
 
             if new_achievements:
+                if DEBUG: 
+                    print("---------------Data----------------")
+                    print(data['data'])
+                    print()
+                    print("---------------Achievements----------------")
+                    print(achievements)
+                    print()
+                    print("---------------New Achievements----------------")
+                    print(new_achievements)
+                    print()
+                    print("----------------Last Checked Time----------------")
+                    print(last_checked_time)
+
                 for achievement in new_achievements:
                     msg = format_achievement_message(achievement)
                     for channel_name in channels:
