@@ -49,8 +49,8 @@ def get_last_checked_time():
             # Convert the stored string time to a datetime object
             return datetime.strptime(data['last_activity_time'], "%Y-%m-%d %H:%M:%S")
     except (FileNotFoundError, json.JSONDecodeError):
-        # If there's an error, return the earliest possible datetime
-        return datetime.min
+        # If there's an error, return the maximum possible datetime
+        return datetime.max
 
 def format_achievement_message(achievement):
     """Helper function to format an achievement message."""
@@ -191,18 +191,18 @@ async def fetch_and_post_latest_activity():
             new_achievements = [a for a in achievements if datetime.strptime(a['Date'], "%Y-%m-%d %H:%M:%S") > last_checked_time]
 
             if new_achievements:
-                if DEBUG: 
-                    print("---------------Data----------------")
-                    print(data['data'])
-                    print()
-                    print("---------------Achievements----------------")
-                    print(achievements)
-                    print()
-                    print("---------------New Achievements----------------")
-                    print(new_achievements)
-                    print()
-                    print("----------------Last Checked Time----------------")
-                    print(last_checked_time)
+                # if DEBUG: 
+                #     print("---------------Data----------------")
+                #     print(data['data'])
+                #     print()
+                #     print("---------------Achievements----------------")
+                #     print(achievements)
+                #     print()
+                #     print("---------------New Achievements----------------")
+                #     print(new_achievements)
+                #     print()
+                #     print("----------------Last Checked Time----------------")
+                #     print(last_checked_time)
 
                 for achievement in new_achievements:
                     msg = format_achievement_message(achievement)
