@@ -217,7 +217,7 @@ async def on_message(message):
     if message.content.startswith('Hello FGRU'):
         await message.channel.send('Hello!')
 
-    allowed_channels = ['bot-testing', 'achievements', "adventure-log"]
+    allowed_channels = ['bot-testing', 'achievements']
     if message.channel.name in allowed_channels:
         react = False
         if message.attachments:
