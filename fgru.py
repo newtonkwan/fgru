@@ -7,6 +7,10 @@ import re
 import requests
 from datetime import datetime
 
+# TODO: Add collection logs 
+# TODO: Add pretty formatting that looks like Dink 
+# TODO: Add a way to add than a string for Staff roles 
+# TODO: 
 # Setup argparse to handle command line arguments
 parser = argparse.ArgumentParser(description="Run the Discord bot.")
 parser.add_argument('--debug', action='store_true', help='Run the bot in debug mode')
@@ -19,20 +23,22 @@ os.environ['DEBUG'] = 'True' if args.debug else 'False'
 DEBUG = os.getenv('DEBUG', 'False') == 'True'
 
 if DEBUG:
-    channels = ["bot-testing"]
+    channels = ["bot-spam"]
 else:
-    channels = ["bot-testing", "adventure-log"]
+    channels = ["bot-spam", "clogging-bot"]
 
-TOKEN = os.getenv('DISCORD_TOKEN')
+TOKEN = os.getenv('DISCORD_LOG_CHASERS_APP_TOKEN')
 if TOKEN is None:
     raise ValueError("No Discord token found. Please set the DISCORD_TOKEN environment variable.")
+
+allowed_role = "Staff"
 
 intents = discord.Intents.default()
 intents.messages = True
 intents.message_content = True
-bot = commands.Bot(command_prefix='!', intents=intents)
+bot = commands.Bot(command_prefix='~', intents=intents)
 
-group_id = 2112  # group ID
+group_id = 2802  # group ID. Log Chasers: 2802, FGRU: 2112
 
 activity_to_emoji = {
     'Overall': '<:skilling:1161180798163107880>',
@@ -106,6 +112,114 @@ def format_achievement_message(achievement):
     else:
         return f"{user} reached {xp_or_kc} {skill}"
 
+def format_embed_message(achievement):
+    """Helper function to format an achievement message into an embed."""
+    print(achievement)
+    user = achievement['Username']
+    skill = achievement['Skill'] # [Abyssal Sire, Attack, Ehp, Overall, etc.]
+    achievement_type = achievement['Type']  #[Pvm, Skill]
+    milestone = achievement['Milestone']
+    xp_or_kc = "{:,}".format(int(achievement['Xp'])) 
+    timestamp = datetime.strptime(achievement['Date'], "%Y-%m-%d %H:%M:%S")
+    # return f"{achievement}"
+
+    # TODO: Add emojis for each message sent.   
+    # skill = 'Overall'
+    # emoji = activity_to_emoji[skill]
+    # return f"{user} reached {xp_or_kc} {skill} {emoji}"
+
+    embed = discord.Embed(
+        title=f"{user} has reached a milestone",
+        color=discord.Color.blue(), 
+        timestamp=timestamp
+    )
+    # embed.add_field(name=f"{achievement_type}", value=f"{skill}", inline=True)
+    # embed.add_field(name=f"test", value=f"{xp_or_kc}", inline=True)
+    # TODO: add all images to a folder and use them to set thumbnail. 
+    # embed.set_thumbnail(url="https://oldschool.runescape.wiki/images/Pet_snakeling.png")  # Replace with your emoji/image URL
+
+    embed.set_footer(text="Log Chasers x TempleOSRS", icon_url="https://pbs.twimg.com/profile_images/1845743084274876434/siKDEd4S_400x400.jpg")
+    # return embed
+
+    if achievement_type == "Pvm":
+        if skill == "Clue_all": #custom exception for All Clues
+            embed.add_field(name=f"Clues", value=f"All", inline=True)   
+            embed.add_field(name=f"Completed", value=f"{xp_or_kc}", inline=True)
+            return embed
+        elif skill == "Clue_master":
+            embed.add_field(name=f"Clues", value=f"Master", inline=True)   
+            embed.add_field(name=f"Completed", value=f"{xp_or_kc}", inline=True)
+            return embed
+        elif skill == "Clue_elite":
+            embed.add_field(name=f"Clues", value=f"Elite", inline=True)   
+            embed.add_field(name=f"Completed", value=f"{xp_or_kc}", inline=True)
+            return embed
+        elif skill == "Clue_hard":
+            embed.add_field(name=f"Clues", value=f"Hard", inline=True)   
+            embed.add_field(name=f"Completed", value=f"{xp_or_kc}", inline=True)
+            return embed
+        elif skill == "Clue_medium":
+            embed.add_field(name=f"Clues", value=f"Medium", inline=True)   
+            embed.add_field(name=f"Completed", value=f"{xp_or_kc}", inline=True)
+            return embed
+        elif skill == "Clue_easy":
+            embed.add_field(name=f"Clues", value=f"Easy", inline=True)   
+            embed.add_field(name=f"Completed", value=f"{xp_or_kc}", inline=True)
+            return embed
+        elif skill == "Clue_beginner":
+            embed.add_field(name=f"Clues", value=f"Beginner", inline=True)   
+            embed.add_field(name=f"Completed", value=f"{xp_or_kc}", inline=True)
+            return embed
+        # TODO: might need to take a look at this again.
+        elif skill == "Colosseum Glory": #custom exception for Colosseum Glory
+            embed.add_field(name=f"Activity", value=f"{skill}", inline=True)   
+            embed.add_field(name=f"Glory", value=f"{xp_or_kc}", inline=True)
+            return embed
+        elif skill == 'Ehb':
+            # TODO: Test all caps 
+            embed.add_field(name=f"Achievement", value=f"EHB", inline=True)   
+            embed.add_field(name=f"Total", value=f"{xp_or_kc}", inline=True)
+            return embed
+        elif skill == "LMS":
+            embed.add_field(name=f"Activity", value=f"LMS", inline=True)   
+            embed.add_field(name=f"LMS score", value=f"{xp_or_kc}", inline=True)
+            return embed
+        else:
+            embed.add_field(name=f"Boss", value=f"{skill}", inline=True)   
+            embed.add_field(name=f"KC", value=f"{xp_or_kc}", inline=True)
+            return embed 
+    elif achievement_type == "Skill":
+        if skill == 'Ehp':  # These are usually treated as cumulative counters, not xp
+            embed.add_field(name=f"Skill", value=f"EHP", inline=True)   
+            embed.add_field(name=f"Total", value=f"{xp_or_kc}", inline=True)
+            return embed 
+        if milestone == "XP": 
+            if skill == "Overall":
+                embed.add_field(name=f"Skill", value=f"{skill}", inline=True)   
+                embed.add_field(name=f"XP", value=f"{xp_or_kc}", inline=True)
+                return embed 
+            else: 
+                embed.add_field(name=f"Skill", value=f"{skill}", inline=True)   
+                embed.add_field(name=f"XP", value=f"{xp_or_kc}", inline=True)
+                return embed 
+        if milestone == "Level":
+            if skill == "Overall": 
+                embed.add_field(name=f"Skill", value=f"{skill}", inline=True)   
+                embed.add_field(name=f"Total Level", value=f"{xp_or_kc}", inline=True)
+                return embed 
+            else:
+                embed.add_field(name=f"Skill", value=f"{skill}", inline=True)   
+                embed.add_field(name=f"Level", value=f"{xp_or_kc}", inline=True)
+                return embed 
+        else:
+            embed.add_field(name=f"Skill", value=f"{skill}", inline=True)   
+            embed.add_field(name=f"XP", value=f"{xp_or_kc}", inline=True)
+            return embed 
+    else:
+        embed.add_field(name=f"Skill", value=f"{skill}", inline=True)   
+        embed.add_field(name=f"Level", value=f"{xp_or_kc}", inline=True)
+        return embed 
+    # TODO: Add EHC ? 
 
 @bot.event
 async def on_ready():
@@ -118,7 +232,7 @@ async def on_ready():
     fetch_and_post_latest_activity.start()  # Start the loop
 
 @bot.command(name="latestactivity")
-@commands.has_role("Oldton")
+@commands.has_role("Staff")
 async def latest_activity(ctx, count: int = 1):
     """Command to fetch and display the latest group achievement from TempleOSRS API."""
     if count < 1 or count > 20:
@@ -138,14 +252,19 @@ async def latest_activity(ctx, count: int = 1):
 
             # Aggregate all messages into one
             messages = []
+            embeds = []
             for achievement in latest_achievements:
                 messages.append(format_achievement_message(achievement))
+                embeds.append(format_embed_message(achievement))
 
             # Join all formatted messages into one large message
             final_message = "\n".join(messages)
             if len(final_message) > 2000:
                 await ctx.send("The message is too long to send in one go. Consider reducing the number of activities.")
             else:
+                for embed in embeds:
+                    await ctx.send(embed=embed)
+                # await ctx.send(embed=embed) 
                 await ctx.send(final_message)
 
         else:
@@ -154,7 +273,7 @@ async def latest_activity(ctx, count: int = 1):
         await ctx.send(f"Failed to fetch data from API: {str(e)}")
 
 @bot.command(name="sendto")
-@commands.has_role("Oldton")
+@commands.has_role("Staff")
 async def send_to_channel(ctx, channel_name: str, *, message: str):
     """Send a message to a specific channel by name."""
     channel = discord.utils.get(ctx.guild.channels, name=channel_name)
@@ -170,7 +289,7 @@ async def send_to_channel(ctx, channel_name: str, *, message: str):
 
 
 @bot.command(name="send")
-@commands.has_role("Oldton")
+@commands.has_role("Staff")
 async def send_message(ctx, message: str):
     """Send a custom formatted message."""
     await ctx.send(message)
@@ -193,9 +312,11 @@ async def fetch_and_post_latest_activity():
             if new_achievements:
                 for achievement in new_achievements:
                     msg = format_achievement_message(achievement)
+                    embed = format_embed_message(achievement)
                     for channel_name in channels:
                         channel = discord.utils.get(bot.get_all_channels(), name=channel_name)
                         if channel:
+                            await channel.send(embed=embed)
                             await channel.send(msg)
                 
                 # Update the last checked time to the timestamp of the last new achievement processed
@@ -217,7 +338,7 @@ async def on_message(message):
     if message.content.startswith('Hello FGRU'):
         await message.channel.send('Hello!')
 
-    allowed_channels = ['bot-testing', 'achievements']
+    allowed_channels = ['bot-spam', 'achievements']
     if message.channel.name in allowed_channels:
         react = False
         if message.attachments:
