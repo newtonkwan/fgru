@@ -7,7 +7,6 @@ import re
 import requests
 from datetime import datetime
 
-# TODO: Add collection logs 
 # TODO: Add a way to add than a string for Staff roles 
 # Setup argparse to handle command line arguments
 parser = argparse.ArgumentParser(description="Run the Discord bot.")
@@ -27,7 +26,7 @@ else:
 
 TOKEN = os.getenv('DISCORD_LOG_CHASERS_APP_TOKEN')
 if TOKEN is None:
-    raise ValueError("No Discord token found. Please set the DISCORD_TOKEN environment variable.")
+    raise ValueError("No Discord token found. Please set the DISCORD_LOG_CHASERS_APP_TOKEN environment variable.")
 
 allowed_role = "Staff"
 
@@ -42,16 +41,27 @@ activity_to_emoji = {
     'Overall': '<:skilling:1161180798163107880>',
 }
 
-def save_last_checked_time(timestamp):
-    with open('last_activity_time.json', 'w') as f:
-        json.dump({'last_activity_time': timestamp}, f)
+def save_last_checked_time(name, timestamp):
+    try:
+        # Load existing data from the JSON file
+        with open('last_activity_time.json', 'r') as f:
+            data = json.load(f)
+    except (FileNotFoundError, json.JSONDecodeError):
+        # If the file doesn't exist or is invalid, start with an empty dictionary
+        data = {}
 
-def get_last_checked_time():
+    # Update the specific entry
+    data[name] = timestamp
+    with open('last_activity_time.json', 'w') as f:
+        json.dump(data, f)
+
+def get_last_checked_time(name):
+    """Get the last checked time for activity or log from a JSON file."""
     try:
         with open('last_activity_time.json', 'r') as f:
             data = json.load(f)
             # Convert the stored string time to a datetime object
-            return datetime.strptime(data['last_activity_time'], "%Y-%m-%d %H:%M:%S")
+            return datetime.strptime(data[name], "%Y-%m-%d %H:%M:%S")
     except (FileNotFoundError, json.JSONDecodeError):
         # If there's an error, return the maximum possible datetime
         return datetime.max
@@ -227,12 +237,96 @@ async def on_ready():
     for command in bot.commands:
         print(command.name)
     print()
-    fetch_and_post_latest_activity.start()  # Start the loop
+    fetch_and_post_recent_activity.start()  # Start the activity loop
+    fetch_and_post_recent_logs.start()    # Start the log loop
 
-@bot.command(name="latestactivity")
+# async def fetch_group_recent_collection_log(group_id: int, count: int = 1, only_notable: bool = False):
+#     """
+#     Fetches recent collection log items for a group from TempleOSRS API.
+
+#     Args:
+#         group_id (int): The group ID to fetch data for.
+#         count (int, optional): How many items to fetch (default 1, max 200).
+#         only_notable (bool, optional): Whether to fetch only notable items (default False).
+
+#     Returns:
+#         List of dictionaries, each representing an obtained item.
+#     """
+#     base_url = "https://templeosrs.com/api/collection-log/group_recent_items.php"
+#     params = {
+#         "group": group_id,
+#         "count": count,
+#         "onlynotable": 1 if only_notable else 0
+#     }
+#     try:
+#         response = requests.get(base_url, params=params)
+#         response.raise_for_status()
+#         data = response.json()
+#         return data
+
+#     except Exception as e:
+#         await ctx.send(f"Failed to fetch data from API: {str(e)}")
+
+format
+
+@bot.command(name="recentlog")
+@commands.has_role("Staff")  
+async def recent_log(ctx, count: int = 1, only_notable: bool = True):
+    """Send recent notable logs. ~recentlog <1-20>. Default: 1"""
+    # TODO: This can't fetch more than 1 item? 
+    if count < 1 or count > 20:
+        await ctx.send("Please provide a count between 1 and 20.")
+        return
+    base_url = "https://templeosrs.com/api/collection-log/group_recent_items.php"
+    params = {
+        "group": 2802,
+        "count": count,
+        "onlynotable": 1 if only_notable else 0
+    }
+    try:
+        response = requests.get(base_url, params=params)
+        response.raise_for_status()
+        data = response.json()
+
+    # TODO: Add back grouping functionliaty in
+    # grouping them all together isn't a bad idea to be honest. 
+        if 'data' in data and data['data']:
+            # Sort achievements by date assuming 'Date' is in a sortable format
+            achievements = sorted(data['data'], key=lambda x: datetime.strptime(x['date'], '%Y-%m-%d %H:%M:%S'), reverse=True)
+            recent_achievements = achievements[:count]  # Get the recent achievement after sorting
+            embeds = [] 
+            for achievement in recent_achievements:
+                print(achievement)
+                embed = discord.Embed(
+                    title=f"{achievement['player_name_with_capitalization']} received a new collection log",
+                    color=discord.Color.gold(),
+                    timestamp = datetime.strptime(achievement['date'], "%Y-%m-%d %H:%M:%S")
+                
+            )
+                if achievement['notable_item']:
+                    embed.add_field(
+                        name=f"Notable Item", 
+                        value=f"{achievement['name']}",
+                        inline=True
+                    )
+                # else: 
+                #     embed.add_field(
+                #         name=f"Common Item", 
+                #         value=f"{achievement['name']}",
+                #         inline=True
+                #     )
+
+                embed.set_footer(text="Log Chasers x TempleOSRS", icon_url="https://pbs.twimg.com/profile_images/1845743084274876434/siKDEd4S_400x400.jpg")
+                embeds.append(embed)
+            for embed in embeds:
+                await ctx.send(embed=embed)
+    except requests.RequestException as e:
+        await ctx.send(f"Failed to fetch data from API: {str(e)}")
+
+@bot.command(name="recentactivity")
 @commands.has_role("Staff")
-async def latest_activity(ctx, count: int = 1):
-    """Command to fetch and display the latest group achievement from TempleOSRS API."""
+async def recent_activity(ctx, count: int = 1):
+    """Send recent activity. ~recentactivity <1-20>. Default: 1"""
     if count < 1 or count > 20:
         await ctx.send("Please provide a count between 1 and 20.")
         return
@@ -246,12 +340,12 @@ async def latest_activity(ctx, count: int = 1):
         if 'data' in data and data['data']:
             # Sort achievements by date assuming 'Date' is in a sortable format
             achievements = sorted(data['data'], key=lambda x: datetime.strptime(x['Date'], '%Y-%m-%d %H:%M:%S'), reverse=True)
-            latest_achievements = achievements[:count]  # Get the latest achievement after sorting
+            recent_achievements = achievements[:count]  # Get the recent achievement after sorting
 
             # Aggregate all messages into one
             messages = []
             embeds = []
-            for achievement in latest_achievements:
+            for achievement in recent_achievements:
                 messages.append(format_achievement_message(achievement))
                 embeds.append(format_embed_message(achievement))
 
@@ -262,8 +356,6 @@ async def latest_activity(ctx, count: int = 1):
             else:
                 for embed in embeds:
                     await ctx.send(embed=embed)
-                # await ctx.send(embed=embed) 
-                # await ctx.send(final_message)
 
         else:
             await ctx.send("No data available or group ID not found.")
@@ -273,7 +365,7 @@ async def latest_activity(ctx, count: int = 1):
 @bot.command(name="sendto")
 @commands.has_role("Staff")
 async def send_to_channel(ctx, channel_name: str, *, message: str):
-    """Send a message to a specific channel by name."""
+    """Send a message to a channel. ~sendto <channel_name> <message>"""
     channel = discord.utils.get(ctx.guild.channels, name=channel_name)
     if channel:
         try:
@@ -289,13 +381,68 @@ async def send_to_channel(ctx, channel_name: str, *, message: str):
 @bot.command(name="send")
 @commands.has_role("Staff")
 async def send_message(ctx, message: str):
-    """Send a custom formatted message."""
+    """Send a custom formatted message. ~sendto <message>"""
     await ctx.send(message)
 
 @tasks.loop(seconds=60)
-async def fetch_and_post_latest_activity():
+async def fetch_and_post_recent_logs(count: int = 1, only_notable: bool = True):
     current_time = datetime.now()
-    last_checked_time = get_last_checked_time()
+    last_checked_time = get_last_checked_time('last_log_time')
+
+    base_url = "https://templeosrs.com/api/collection-log/group_recent_items.php"
+    params = {
+        "group": 2802,
+        "count": count,
+        "onlynotable": 1 if only_notable else 0
+    }
+    try:
+        response = requests.get(base_url, params=params)
+        response.raise_for_status()
+        data = response.json()
+
+        if 'data' in data and data['data']:
+            achievements = sorted(data['data'], key=lambda x: datetime.strptime(x['date'], "%Y-%m-%d %H:%M:%S"))
+            new_achievements = [a for a in achievements if datetime.strptime(a['date'], "%Y-%m-%d %H:%M:%S") > last_checked_time]
+            if new_achievements:
+                for achievement in new_achievements:
+                    embed = discord.Embed(
+                        title=f"{achievement['player_name_with_capitalization']} received a new collection log",
+                        color=discord.Color.gold(),
+                        timestamp = datetime.strptime(achievement['date'], "%Y-%m-%d %H:%M:%S")
+                    )
+                    if achievement['notable_item']:
+                        embed.add_field(
+                            name=f"Notable Item", 
+                            value=f"{achievement['name']}",
+                            inline=True
+                        )
+                    else: 
+                        embed.add_field(
+                            name=f"Common Item", 
+                            value=f"{achievement['name']}",
+                            inline=True
+                        )
+
+                    embed.set_footer(text="Log Chasers x TempleOSRS", icon_url="https://pbs.twimg.com/profile_images/1845743084274876434/siKDEd4S_400x400.jpg")
+                    for channel_name in channels:
+                        channel = discord.utils.get(bot.get_all_channels(), name=channel_name)
+                        if channel:
+                            await channel.send(embed=embed)
+                
+                # Update the last checked time to the timestamp of the last new log processed
+                recent_activity_time = datetime.strptime(new_achievements[-1]['date'], "%Y-%m-%d %H:%M:%S")
+                save_last_checked_time('last_log_time', recent_activity_time.strftime("%Y-%m-%d %H:%M:%S"))
+                print(f"{current_time.strftime('%Y-%m-%d %H:%M:%S')} - Posted new logs.")
+            else:
+                print(f"{current_time.strftime('%Y-%m-%d %H:%M:%S')} - No new logs to post.")
+
+    except requests.RequestException as e:
+        print(f"Failed to fetch data from API: {str(e)}")
+
+@tasks.loop(seconds=60)
+async def fetch_and_post_recent_activity():
+    current_time = datetime.now()
+    last_checked_time = get_last_checked_time(name='last_activity_time')
 
     url = f"https://templeosrs.com/api/group_achievements.php?id={group_id}"
     try:
@@ -318,8 +465,8 @@ async def fetch_and_post_latest_activity():
                             # await channel.send(msg)
                 
                 # Update the last checked time to the timestamp of the last new achievement processed
-                latest_activity_time = datetime.strptime(new_achievements[-1]['Date'], "%Y-%m-%d %H:%M:%S")
-                save_last_checked_time(latest_activity_time.strftime("%Y-%m-%d %H:%M:%S"))
+                recent_activity_time = datetime.strptime(new_achievements[-1]['Date'], "%Y-%m-%d %H:%M:%S")
+                save_last_checked_time('last_activity_time', recent_activity_time.strftime("%Y-%m-%d %H:%M:%S"))
                 print(f"{current_time.strftime('%Y-%m-%d %H:%M:%S')} - Posted new activities.")
             else:
                 print(f"{current_time.strftime('%Y-%m-%d %H:%M:%S')} - No new activities to post.")
