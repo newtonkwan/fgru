@@ -138,8 +138,7 @@ def format_embed_message(achievement):
 
     embed = discord.Embed(
         title=f"{user} has reached a milestone",
-        color=discord.Color.blue(), 
-        timestamp=timestamp
+        color=discord.Color.blue()
     )
     # embed.add_field(name=f"{achievement_type}", value=f"{skill}", inline=True)
     # embed.add_field(name=f"test", value=f"{xp_or_kc}", inline=True)
@@ -270,8 +269,8 @@ async def recent_log(ctx, count: int = 1, only_notable: bool = True):
                 print(achievement)
                 embed = discord.Embed(
                     title=f"{achievement['player_name_with_capitalization']} received a new collection log",
-                    color=discord.Color.gold(),
-                    timestamp = datetime.strptime(achievement['date'], "%Y-%m-%d %H:%M:%S")
+                    color=discord.Color.gold()
+                    # TODO: figure out if you can have it be dyanmic based on timezone you're in. 
                 
             )
                 if achievement['notable_item']:
@@ -378,8 +377,8 @@ async def fetch_and_post_recent_logs(count: int = 1, only_notable: bool = True):
                 for achievement in new_achievements:
                     embed = discord.Embed(
                         title=f"{achievement['player_name_with_capitalization']} received a new collection log",
-                        color=discord.Color.gold(),
-                        timestamp = datetime.strptime(achievement['date'], "%Y-%m-%d %H:%M:%S")
+                        color=discord.Color.gold()
+                        # TODO: Can you have it be dyanmic based on timezone you're in.
                     )
                     if achievement['notable_item']:
                         embed.add_field(
