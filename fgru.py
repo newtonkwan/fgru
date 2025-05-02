@@ -22,7 +22,7 @@ DEBUG = os.getenv('DEBUG', 'False') == 'True'
 if DEBUG:
     channels = ["bot-spam"]
 else:
-    channels = ["bot-spam", "clogging-bot"]
+    channels = ["bot-spam", "milestone-bot"]
 
 TOKEN = os.getenv('DISCORD_LOG_CHASERS_APP_TOKEN')
 if TOKEN is None:
@@ -240,35 +240,6 @@ async def on_ready():
     fetch_and_post_recent_activity.start()  # Start the activity loop
     fetch_and_post_recent_logs.start()    # Start the log loop
 
-# async def fetch_group_recent_collection_log(group_id: int, count: int = 1, only_notable: bool = False):
-#     """
-#     Fetches recent collection log items for a group from TempleOSRS API.
-
-#     Args:
-#         group_id (int): The group ID to fetch data for.
-#         count (int, optional): How many items to fetch (default 1, max 200).
-#         only_notable (bool, optional): Whether to fetch only notable items (default False).
-
-#     Returns:
-#         List of dictionaries, each representing an obtained item.
-#     """
-#     base_url = "https://templeosrs.com/api/collection-log/group_recent_items.php"
-#     params = {
-#         "group": group_id,
-#         "count": count,
-#         "onlynotable": 1 if only_notable else 0
-#     }
-#     try:
-#         response = requests.get(base_url, params=params)
-#         response.raise_for_status()
-#         data = response.json()
-#         return data
-
-#     except Exception as e:
-#         await ctx.send(f"Failed to fetch data from API: {str(e)}")
-
-format
-
 @bot.command(name="recentlog")
 @commands.has_role("Staff")  
 async def recent_log(ctx, count: int = 1, only_notable: bool = True):
@@ -381,7 +352,7 @@ async def send_to_channel(ctx, channel_name: str, *, message: str):
 @bot.command(name="send")
 @commands.has_role("Staff")
 async def send_message(ctx, message: str):
-    """Send a custom formatted message. ~sendto <message>"""
+    """Send a custom formatted message. ~send <message>"""
     await ctx.send(message)
 
 @tasks.loop(seconds=60)
