@@ -8,9 +8,7 @@ import requests
 from datetime import datetime
 
 # TODO: Add collection logs 
-# TODO: Add pretty formatting that looks like Dink 
 # TODO: Add a way to add than a string for Staff roles 
-# TODO: 
 # Setup argparse to handle command line arguments
 parser = argparse.ArgumentParser(description="Run the Discord bot.")
 parser.add_argument('--debug', action='store_true', help='Run the bot in debug mode')
@@ -265,7 +263,7 @@ async def latest_activity(ctx, count: int = 1):
                 for embed in embeds:
                     await ctx.send(embed=embed)
                 # await ctx.send(embed=embed) 
-                await ctx.send(final_message)
+                # await ctx.send(final_message)
 
         else:
             await ctx.send("No data available or group ID not found.")
@@ -317,7 +315,7 @@ async def fetch_and_post_latest_activity():
                         channel = discord.utils.get(bot.get_all_channels(), name=channel_name)
                         if channel:
                             await channel.send(embed=embed)
-                            await channel.send(msg)
+                            # await channel.send(msg)
                 
                 # Update the last checked time to the timestamp of the last new achievement processed
                 latest_activity_time = datetime.strptime(new_achievements[-1]['Date'], "%Y-%m-%d %H:%M:%S")
