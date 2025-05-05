@@ -254,12 +254,12 @@ def is_notable(achievement):
     if achievement['Type'] == "Skill" and achievement['Skill'] == "Overall":
         return achievement['Xp'] % 1000000000 == 0
 
-    # Filter EHB interval (every 1,000)
-    if achievement['Type'] == "Pvm" and achievement['Skill'] == "Ehb":
-        return achievement['Xp'] % 1000 == 0
-
     # Filter EHP interval (every 1,000)
     if achievement['Type'] == "Skill" and achievement['Skill'] == "Ehp":
+        return achievement['Xp'] % 1000 == 0
+
+    # Filter EHB interval (every 1,000)
+    if achievement['Type'] == "Pvm" and achievement['Skill'] == "Ehb":
         return achievement['Xp'] % 1000 == 0
 
     # Filter Elite + Master clue interval (every 1,000)
@@ -268,7 +268,7 @@ def is_notable(achievement):
 
     # Filter collections interval (every 100)
     if achievement['Type'] == "Pvm" and achievement['Skill'] == "Collections":
-        return True
+        return achievement['Xp'] % 100 == 0
 
     # All else is not notable
     return False
@@ -490,6 +490,7 @@ async def fetch_and_post_recent_activity():
 
             if new_achievements:
                 for achievement in new_achievements:
+                    print(achievement)
                     embed = format_embed_message(achievement)
                     for channel_name in channels:
                         channel = discord.utils.get(bot.get_all_channels(), name=channel_name)
