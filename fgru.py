@@ -37,6 +37,8 @@ bot = commands.Bot(command_prefix='~', intents=intents)
 
 group_id = 2802  # group ID. Log Chasers: 2802, FGRU: 2112
 
+whitelist_items = ["Arcane sigil", "Elysian sigil", "Spectral sigil", "Inquisitor's hauberk", "Inquisitor's plateskirt", "Inquisitor's great helm", "Inquisitor's mace"]
+
 activity_to_emoji = {
     'Overall': '<:skilling:1161180798163107880>',
 }
@@ -122,7 +124,6 @@ def format_achievement_message(achievement):
 
 def format_embed_message(achievement):
     """Helper function to format an achievement message into an embed."""
-    print(achievement)
     user = achievement['Username']
     skill = achievement['Skill'] # [Abyssal Sire, Attack, Ehp, Overall, etc.]
     achievement_type = achievement['Type']  #[Pvm, Skill]
@@ -136,10 +137,17 @@ def format_embed_message(achievement):
     # emoji = activity_to_emoji[skill]
     # return f"{user} reached {xp_or_kc} {skill} {emoji}"
 
-    embed = discord.Embed(
+    if is_notable(achievement):
+        embed = discord.Embed(
+        title=f"{user} has reached a milestone",
+        color=discord.Color.gold()
+    )
+
+    else: 
+        embed = discord.Embed(
         title=f"{user} has reached a milestone",
         color=discord.Color.blue()
-    )
+        )
     # embed.add_field(name=f"{achievement_type}", value=f"{skill}", inline=True)
     # embed.add_field(name=f"test", value=f"{xp_or_kc}", inline=True)
     # TODO: add all images to a folder and use them to set thumbnail. 
@@ -191,6 +199,14 @@ def format_embed_message(achievement):
             embed.add_field(name=f"Activity", value=f"LMS", inline=True)   
             embed.add_field(name=f"LMS score", value=f"{xp_or_kc}", inline=True)
             return embed
+        elif skill == "Collections": 
+            embed = discord.Embed(
+                title=f"{user} has reached a milestone",
+                color=discord.Color.gold()
+            )
+            embed.set_footer(text="Log Chasers x TempleOSRS", icon_url="https://pbs.twimg.com/profile_images/1845743084274876434/siKDEd4S_400x400.jpg")
+            embed.add_field(name=f"Activity", value=f"Collection Logs", inline=True)   
+            embed.add_field(name=f"Logs", value=f"{xp_or_kc}", inline=True)
         else:
             embed.add_field(name=f"Boss", value=f"{skill}", inline=True)   
             embed.add_field(name=f"KC", value=f"{xp_or_kc}", inline=True)
@@ -227,6 +243,35 @@ def format_embed_message(achievement):
         embed.add_field(name=f"Level", value=f"{xp_or_kc}", inline=True)
         return embed 
     # TODO: Add EHC ? 
+
+def is_notable(achievement):
+    """Check if an achievement is notable"""
+    # Filter Skill XP for only 200m
+    if achievement['Type'] == "Skill" and achievement['Skill'] not in ["Overall", "Ehb"]:
+        return achievement['Xp'] == 200000000
+
+    # Filter Overall XP interval (every 1b)
+    if achievement['Type'] == "Skill" and achievement['Skill'] == "Overall":
+        return achievement['Xp'] % 1000000000 == 0
+
+    # Filter EHB interval (every 1,000)
+    if achievement['Type'] == "Pvm" and achievement['Skill'] == "Ehb":
+        return achievement['Xp'] % 1000 == 0
+
+    # Filter EHP interval (every 1,000)
+    if achievement['Type'] == "Skill" and achievement['Skill'] == "Ehp":
+        return achievement['Xp'] % 1000 == 0
+
+    # Filter Elite + Master clue interval (every 1,000)
+    if achievement['Type'] == "Pvm" and achievement['Skill'] in ["Clue_elite", "Clue_master"]:
+        return achievement['Xp'] % 1000 == 0
+
+    # Filter collections interval (every 100)
+    if achievement['Type'] == "Pvm" and achievement['Skill'] == "Collections":
+        return True
+
+    # All else is not notable
+    return False
 
 @bot.event
 async def on_ready():
@@ -279,12 +324,6 @@ async def recent_log(ctx, count: int = 1, only_notable: bool = True):
                         value=f"{achievement['name']}",
                         inline=True
                     )
-                # else: 
-                #     embed.add_field(
-                #         name=f"Common Item", 
-                #         value=f"{achievement['name']}",
-                #         inline=True
-                #     )
 
                 embed.set_footer(text="Log Chasers x TempleOSRS", icon_url="https://pbs.twimg.com/profile_images/1845743084274876434/siKDEd4S_400x400.jpg")
                 embeds.append(embed)
@@ -316,16 +355,40 @@ async def recent_activity(ctx, count: int = 1):
             messages = []
             embeds = []
             for achievement in recent_achievements:
-                messages.append(format_achievement_message(achievement))
+                print(achievement)
                 embeds.append(format_embed_message(achievement))
 
-            # Join all formatted messages into one large message
-            final_message = "\n".join(messages)
-            if len(final_message) > 2000:
-                await ctx.send("The message is too long to send in one go. Consider reducing the number of activities.")
-            else:
-                for embed in embeds:
-                    await ctx.send(embed=embed)
+            for embed in embeds:
+                await ctx.send(embed=embed)
+
+        else:
+            await ctx.send("No data available or group ID not found.")
+    except requests.RequestException as e:
+        await ctx.send(f"Failed to fetch data from API: {str(e)}")
+
+
+@bot.command(name="recentnotableactivity")
+@commands.has_role("Staff")
+async def recent_notable_activity(ctx, count: int = 20):
+    """Send recent notable activity, if any."""
+    url = f"https://templeosrs.com/api/group_achievements.php?id={group_id}"
+    try:
+        response = requests.get(url)
+        response.raise_for_status()  # This will raise an exception for HTTP errors
+        data = response.json()  # Parse JSON response
+
+        if 'data' in data and data['data']:
+            # Sort achievements by date assuming 'Date' is in a sortable format
+            achievements = sorted(data['data'], key=lambda x: datetime.strptime(x['Date'], '%Y-%m-%d %H:%M:%S'), reverse=True)
+            recent_achievements = achievements[:count]  # Get the recent achievement after sorting
+            embeds = []
+            for achievement in recent_achievements:
+                if is_notable(achievement):
+                    print(achievement)
+                    embeds.append(format_embed_message(achievement))
+
+            for embed in embeds:
+                await ctx.send(embed=embed)
 
         else:
             await ctx.send("No data available or group ID not found.")
@@ -375,6 +438,7 @@ async def fetch_and_post_recent_logs(count: int = 1, only_notable: bool = True):
             new_achievements = [a for a in achievements if datetime.strptime(a['date'], "%Y-%m-%d %H:%M:%S") > last_checked_time]
             if new_achievements:
                 for achievement in new_achievements:
+                    print(achievement)
                     embed = discord.Embed(
                         title=f"{achievement['player_name_with_capitalization']} received a new collection log",
                         color=discord.Color.gold()
@@ -426,13 +490,15 @@ async def fetch_and_post_recent_activity():
 
             if new_achievements:
                 for achievement in new_achievements:
-                    msg = format_achievement_message(achievement)
                     embed = format_embed_message(achievement)
                     for channel_name in channels:
                         channel = discord.utils.get(bot.get_all_channels(), name=channel_name)
-                        if channel:
-                            await channel.send(embed=embed)
-                            # await channel.send(msg)
+                        if channel: 
+                            if is_notable(achievement) and channel_name == "milestone-bot":
+                                await channel.send(embed=embed)
+                            elif channel_name =="bot-spam": 
+                                await channel.send(embed=embed)
+
                 
                 # Update the last checked time to the timestamp of the last new achievement processed
                 recent_activity_time = datetime.strptime(new_achievements[-1]['Date'], "%Y-%m-%d %H:%M:%S")
