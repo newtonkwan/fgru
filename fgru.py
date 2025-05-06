@@ -7,7 +7,9 @@ import re
 import requests
 from datetime import datetime
 
-# TODO: Add a way to add than a string for Staff roles 
+
+
+
 # Setup argparse to handle command line arguments
 parser = argparse.ArgumentParser(description="Run the Discord bot.")
 parser.add_argument('--debug', action='store_true', help='Run the bot in debug mode')
@@ -15,6 +17,17 @@ args = parser.parse_args()
 
 # Set environment variable based on the presence of the --debug flag
 os.environ['DEBUG'] = 'True' if args.debug else 'False'
+
+intents = discord.Intents.default()
+intents.messages = True
+intents.message_content = True
+bot = commands.Bot(command_prefix='~', intents=intents)
+
+TOKEN = os.getenv('DISCORD_LOG_CHASERS_APP_TOKEN')
+if TOKEN is None:
+    raise ValueError("No Discord token found. Please set the DISCORD_LOG_CHASERS_APP_TOKEN environment variable.")
+
+
 
 # Convert environment variable to a Boolean
 DEBUG = os.getenv('DEBUG', 'False') == 'True'
@@ -24,24 +37,10 @@ if DEBUG:
 else:
     channels = ["bot-spam", "milestone-bot"]
 
-TOKEN = os.getenv('DISCORD_LOG_CHASERS_APP_TOKEN')
-if TOKEN is None:
-    raise ValueError("No Discord token found. Please set the DISCORD_LOG_CHASERS_APP_TOKEN environment variable.")
-
+# TODO: Add a way to add than a string for Staff roles 
 allowed_role = "Staff"
 
-intents = discord.Intents.default()
-intents.messages = True
-intents.message_content = True
-bot = commands.Bot(command_prefix='~', intents=intents)
-
 group_id = 2802  # group ID. Log Chasers: 2802, FGRU: 2112
-
-whitelist_items = ["Arcane sigil", "Elysian sigil", "Spectral sigil", "Inquisitor's hauberk", "Inquisitor's plateskirt", "Inquisitor's great helm", "Inquisitor's mace"]
-
-activity_to_emoji = {
-    'Overall': '<:skilling:1161180798163107880>',
-}
 
 def save_last_checked_time(name, timestamp):
     try:
@@ -247,7 +246,7 @@ def format_embed_message(achievement):
 def is_notable(achievement):
     """Check if an achievement is notable"""
     # Filter Skill XP for only 200m
-    if achievement['Type'] == "Skill" and achievement['Skill'] not in ["Overall", "Ehb"]:
+    if achievement['Type'] == "Skill" and achievement['Skill'] not in ["Overall", "Ehp"]:
         return achievement['Xp'] == 200000000
 
     # Filter Overall XP interval (every 1b)
