@@ -5,7 +5,8 @@ from fgru import is_notable
     ({"Type": "Skill", "Skill": "Attack", "Xp": 200000000}, True),  # 200m XP in a skill
     ({"Type": "Skill", "Skill": "Attack", "Xp": 199999999}, False),  # Not 200m XP
     ({"Type": "Skill", "Skill": "Overall", "Xp": 1000000000}, True),  # 1b Overall XP
-     ({"Type": "Skill", "Skill": "Overall", "Xp": 2000000000}, True),  # 2b Overall XP
+    ({"Type": "Skill", "Skill": "Overall", "Xp": 2000000000}, True),  # 2b Overall XP
+    ({"Type": "Skill", "Skill": "Overall", "Xp": 4600000000}, True),  # 4.6b Overall XP
     ({"Type": "Skill", "Skill": "Overall", "Xp": 999999999}, False),  # Not 1b Overall XP
     ({"Type": "Skill", "Skill": "Ehp", "Xp": 1000}, True),  # 1,000 EHP
     ({"Type": "Skill", "Skill": "Ehp", "Xp": 2000}, True),  # 2,000 EHP
