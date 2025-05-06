@@ -11,6 +11,8 @@ from datetime import datetime
 
 
 # Setup argparse to handle command line arguments
+# TODO: Set up if __name__ == "__main__" to run the bot
+# TODO: Add images to each picture
 parser = argparse.ArgumentParser(description="Run the Discord bot.")
 parser.add_argument('--debug', action='store_true', help='Run the bot in debug mode')
 args = parser.parse_args()
@@ -249,9 +251,9 @@ def is_notable(achievement):
     if achievement['Type'] == "Skill" and achievement['Skill'] not in ["Overall", "Ehp"]:
         return achievement['Xp'] == 200000000
 
-    # Filter Overall XP interval (every 1b)
+    # Filter Overall XP interval (every 1b or 4.6b)
     if achievement['Type'] == "Skill" and achievement['Skill'] == "Overall":
-        return achievement['Xp'] % 1000000000 == 0
+        return achievement['Xp'] % 1000000000 == 0 or achievement['Xp'] == 4600000000
 
     # Filter EHP interval (every 1,000)
     if achievement['Type'] == "Skill" and achievement['Skill'] == "Ehp":
