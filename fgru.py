@@ -201,11 +201,6 @@ def format_embed_message(achievement):
             embed.add_field(name=f"LMS score", value=f"{xp_or_kc}", inline=True)
             return embed
         elif skill == "Collections": 
-            embed = discord.Embed(
-                title=f"{user} has reached a milestone",
-                color=discord.Color.gold()
-            )
-            embed.set_footer(text="Log Chasers x TempleOSRS", icon_url="https://pbs.twimg.com/profile_images/1845743084274876434/siKDEd4S_400x400.jpg")
             embed.add_field(name=f"Activity", value=f"Collection Logs", inline=True)   
             embed.add_field(name=f"Logs", value=f"{xp_or_kc}", inline=True)
         else:
