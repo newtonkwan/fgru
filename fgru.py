@@ -138,10 +138,7 @@ def format_embed_message(achievement):
         title=f"{user} has reached a milestone",
         color=discord.Color.blue(), 
         timestamp=timestamp
-        # embed.add_field(name="Time", value=f"<t:{unix_timestamp}>", inline=True)
     )
-    # embed.set_thumbnail(url="https://cdn.discordapp.com/emojis/664263303224229911.webp?size=160")
-    # embed.set_thumbnail(url="https://templeosrs.com/resources/skill-icon-gifs/skill_icon_Ehp.gif")
     embed.set_footer(text="Log Chasers x TempleOSRS", icon_url="https://pbs.twimg.com/profile_images/1845743084274876434/siKDEd4S_400x400.jpg")
     if achievement_type == "Pvm":
         if skill == "Clue_all":  # custom exception for All Clues
