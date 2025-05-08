@@ -203,6 +203,7 @@ def format_embed_message(achievement):
         elif skill == "Collections": 
             embed.add_field(name=f"Activity", value=f"Collection Logs", inline=True)   
             embed.add_field(name=f"Logs", value=f"{xp_or_kc}", inline=True)
+            return embed 
         else:
             embed.add_field(name=f"Boss", value=f"{skill}", inline=True)   
             embed.add_field(name=f"KC", value=f"{xp_or_kc}", inline=True)
@@ -488,6 +489,7 @@ async def fetch_and_post_recent_activity():
                 for achievement in new_achievements:
                     print(achievement)
                     embed = format_embed_message(achievement)
+                    
                     for channel_name in channels:
                         channel = discord.utils.get(bot.get_all_channels(), name=channel_name)
                         if channel: 
