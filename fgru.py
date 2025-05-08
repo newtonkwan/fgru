@@ -6,9 +6,6 @@ import os
 import re
 import requests
 from datetime import datetime, timezone
-from sprite_utils import get_sprite_coordinates
-
-
 
 
 # Setup argparse to handle command line arguments
