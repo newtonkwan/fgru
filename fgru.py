@@ -5,7 +5,8 @@ import json
 import os
 import re
 import requests
-from datetime import datetime
+from datetime import datetime, timezone
+from sprite_utils import get_sprite_coordinates
 
 
 
@@ -125,49 +126,34 @@ def format_achievement_message(achievement):
 
 def format_embed_message(achievement):
     """Helper function to format an achievement message into an embed."""
+    print(achievement)
     user = achievement['Username']
-    skill = achievement['Skill'] # [Abyssal Sire, Attack, Ehp, Overall, etc.]
-    achievement_type = achievement['Type']  #[Pvm, Skill]
+    skill = achievement['Skill']  # [Abyssal Sire, Attack, Ehp, Overall, etc.]
+    achievement_type = achievement['Type']  # [Pvm, Skill]
     milestone = achievement['Milestone']
-    xp_or_kc = "{:,}".format(int(achievement['Xp'])) 
-    timestamp = datetime.strptime(achievement['Date'], "%Y-%m-%d %H:%M:%S")
-    # return f"{achievement}"
+    xp_or_kc = "{:,}".format(int(achievement['Xp']))
+    timestamp = datetime.strptime(achievement['Date'], "%Y-%m-%d %H:%M:%S").replace(tzinfo=timezone.utc)
 
-    # TODO: Add emojis for each message sent.   
-    # skill = 'Overall'
-    # emoji = activity_to_emoji[skill]
-    # return f"{user} reached {xp_or_kc} {skill} {emoji}"
-
-    if is_notable(achievement):
-        embed = discord.Embed(
+    embed = discord.Embed(
         title=f"{user} has reached a milestone",
-        color=discord.Color.gold()
+        color=discord.Color.blue(), 
+        timestamp=timestamp
+        # embed.add_field(name="Time", value=f"<t:{unix_timestamp}>", inline=True)
     )
-
-    else: 
-        embed = discord.Embed(
-        title=f"{user} has reached a milestone",
-        color=discord.Color.blue()
-        )
-    # embed.add_field(name=f"{achievement_type}", value=f"{skill}", inline=True)
-    # embed.add_field(name=f"test", value=f"{xp_or_kc}", inline=True)
-    # TODO: add all images to a folder and use them to set thumbnail. 
-    # embed.set_thumbnail(url="https://oldschool.runescape.wiki/images/Pet_snakeling.png")  # Replace with your emoji/image URL
-
+    # embed.set_thumbnail(url="https://cdn.discordapp.com/emojis/664263303224229911.webp?size=160")
+    # embed.set_thumbnail(url="https://templeosrs.com/resources/skill-icon-gifs/skill_icon_Ehp.gif")
     embed.set_footer(text="Log Chasers x TempleOSRS", icon_url="https://pbs.twimg.com/profile_images/1845743084274876434/siKDEd4S_400x400.jpg")
-    # return embed
-
     if achievement_type == "Pvm":
-        if skill == "Clue_all": #custom exception for All Clues
-            embed.add_field(name=f"Clues", value=f"All", inline=True)   
+        if skill == "Clue_all":  # custom exception for All Clues
+            embed.add_field(name=f"Clues", value=f"All", inline=True)
             embed.add_field(name=f"Completed", value=f"{xp_or_kc}", inline=True)
             return embed
         elif skill == "Clue_master":
-            embed.add_field(name=f"Clues", value=f"Master", inline=True)   
+            embed.add_field(name=f"Clues", value=f"Master", inline=True)
             embed.add_field(name=f"Completed", value=f"{xp_or_kc}", inline=True)
             return embed
         elif skill == "Clue_elite":
-            embed.add_field(name=f"Clues", value=f"Elite", inline=True)   
+            embed.add_field(name=f"Clues", value=f"Elite", inline=True)
             embed.add_field(name=f"Completed", value=f"{xp_or_kc}", inline=True)
             return embed
         elif skill == "Clue_hard":
