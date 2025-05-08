@@ -22,6 +22,7 @@ from fgru import is_notable
     ({"Type": "Pvm", "Skill": "Clue_master", "Xp": 2000}, True),  # 2,000 Master Clues
     ({"Type": "Pvm", "Skill": "Clue_master", "Xp": 999}, False),  # Not 1,000 Master Clues
     ({"Type": "Pvm", "Skill": "Collections", "Xp": 100}, True),  # 100 Collections
+    ({"Type": "Pvm", "Skill": "Collections", "Xp": 1000}, True),  # 1000 Collections
     ({"Type": "Pvm", "Skill": "Collections", "Xp": 200}, True),  # 200 Collections
     ({"Type": "Pvm", "Skill": "Collections", "Xp": 99}, False),  # Not 100 Collections
     ({"Type": "Skill", "Skill": "Attack", "Xp": 100000000}, False),  # Not notable
