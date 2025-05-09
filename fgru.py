@@ -289,9 +289,11 @@ async def recent_log(ctx, count: int = 1, only_notable: bool = True):
             embeds = [] 
             for achievement in recent_achievements:
                 print(achievement)
+                timestamp = datetime.strptime(achievement['Date'], "%Y-%m-%d %H:%M:%S").replace(tzinfo=timezone.utc)
                 embed = discord.Embed(
                     title=f"{achievement['player_name_with_capitalization']} received a new collection log",
-                    color=discord.Color.gold()
+                    color=discord.Color.gold(), 
+                    timestamp=timestamp
                     # TODO: figure out if you can have it be dyanmic based on timezone you're in. 
                 
             )
