@@ -123,7 +123,7 @@ def format_achievement_message(achievement):
 
 def format_embed_message(achievement):
     """Helper function to format an achievement message into an embed."""
-    print(achievement)
+    # print(achievement)
     user = achievement['Username']
     skill = achievement['Skill']  # [Abyssal Sire, Attack, Ehp, Overall, etc.]
     achievement_type = achievement['Type']  # [Pvm, Skill]
@@ -136,6 +136,7 @@ def format_embed_message(achievement):
         color=discord.Color.blue(), 
         timestamp=timestamp
     )
+    # embed.set_thumbnail(url="https://oldschool.runescape.wiki/images/Stats_icon.png?1b467")
     embed.set_footer(text="Log Chasers x TempleOSRS", icon_url="https://pbs.twimg.com/profile_images/1845743084274876434/siKDEd4S_400x400.jpg")
     if achievement_type == "Pvm":
         if skill == "Clue_all":  # custom exception for All Clues
@@ -289,7 +290,7 @@ async def recent_log(ctx, count: int = 1, only_notable: bool = True):
             embeds = [] 
             for achievement in recent_achievements:
                 print(achievement)
-                timestamp = datetime.strptime(achievement['Date'], "%Y-%m-%d %H:%M:%S").replace(tzinfo=timezone.utc)
+                timestamp = datetime.strptime(achievement['date'], "%Y-%m-%d %H:%M:%S").replace(tzinfo=timezone.utc)
                 embed = discord.Embed(
                     title=f"{achievement['player_name_with_capitalization']} received a new collection log",
                     color=discord.Color.gold(), 
