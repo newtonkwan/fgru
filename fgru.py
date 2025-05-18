@@ -419,10 +419,11 @@ async def fetch_and_post_recent_logs(count: int = 1, only_notable: bool = True):
             if new_achievements:
                 for achievement in new_achievements:
                     print(achievement)
+                    timestamp = datetime.strptime(achievement['date'], "%Y-%m-%d %H:%M:%S").replace(tzinfo=timezone.utc)
                     embed = discord.Embed(
                         title=f"{achievement['player_name_with_capitalization']} received a new collection log",
-                        color=discord.Color.gold()
-                        # TODO: Can you have it be dyanmic based on timezone you're in.
+                        color=discord.Color.gold(), 
+                        timestamp=timestamp
                     )
                     if achievement['notable_item']:
                         embed.add_field(
