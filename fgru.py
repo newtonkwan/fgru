@@ -251,6 +251,50 @@ def is_notable(achievement):
     # All else is not notable
     return False
 
+def get_player_info(group_id: int = 2802, username: str = "Oldton") -> dict:
+    """
+    Fetches all available TempleOSRS data for a player in a given group.
+
+    Args:
+        group_id (int): The TempleOSRS group ID.
+        username (str): The player's username (case-insensitive).
+
+    Returns:
+        dict: A dictionary of the player's data, or an error message.
+    """
+    def error_result(code: str, message: str) -> dict:
+        return {"error": code, "message": message}
+
+    url = f"https://templeosrs.com/api/group_member_info.php?id={group_id}&details=true"
+
+    try:
+        response = requests.get(url)
+        response.raise_for_status()
+    except requests.RequestException as e:
+        return error_result("RequestException", f"HTTP request failed: {e}")
+
+    try:
+        data = response.json()
+    except ValueError:
+        print("Response is not valid JSON:")
+        print(response.text)
+        return error_result("InvalidJSON", "Response was not valid JSON.")
+
+    memberlist = data.get("data", {}).get("memberlist", {})
+    if not isinstance(memberlist, dict):
+        return error_result("InvalidFormat", "Expected memberlist to be a dictionary.")
+
+    # Use lowercase matching for flexibility
+    for player_key, player_data in memberlist.items():
+        if player_key.lower() == username.lower():
+            return player_data
+
+    return error_result("PlayerNotFound", f"Player '{username}' is not in Log Chasers.")
+
+# player_info = get_player_info()
+# pprint(player_info, sort_dicts=False)
+
+
 @bot.event
 async def on_ready():
     print(f'Logged in as {bot.user}')
@@ -397,6 +441,38 @@ async def send_message(ctx, message: str):
     """Send a custom formatted message. ~send <message>"""
     await ctx.send(message)
 
+@bot.command(name="joindate")
+# @commands.has_role("Member")
+async def join_date(ctx, *, username: str = None):
+    """
+    Get the join date of a player.
+    Usage: ~joindate <username> or ~joindate (defaults to your display name)
+    """
+    requester_name = ctx.author.display_name
+    target_name = username or requester_name
+
+    def _send_error(message):
+        return ctx.send(f"{message}")
+
+    player_info = get_player_info(username=target_name)
+
+    if 'error' in player_info:
+        error_type = player_info['error']
+        if error_type == "PlayerNotFound":
+            return await _send_error(f"Hmm. Why don't you try <#1267596110109605930>?")
+        return await _send_error(f"error: {player_info['message']}")
+
+    join_date_raw = player_info.get('join_date')
+    if not join_date_raw:
+        return await _send_error(f"join date for '{target_name}' not found.")
+
+    try:
+        join_date_str = datetime.strptime(join_date_raw, "%Y-%m-%d %H:%M:%S").strftime("%B %d, %Y")
+    except ValueError:
+        return await _send_error(f"join date format for '{target_name}' is invalid.")
+
+    await ctx.send(f"{target_name} joined on {join_date_str}.")
+
 @tasks.loop(seconds=60)
 async def fetch_and_post_recent_logs(count: int = 1, only_notable: bool = True):
     current_time = datetime.now()
@@ -531,7 +607,8 @@ async def on_command_error(ctx, error):
     elif isinstance(error, commands.CommandInvokeError):
         await ctx.send(f"Error in command execution: {error.original}")
     elif isinstance(error, commands.CommandNotFound):
-        await ctx.send("Command not found, please check the command and try again.")
+        return 
+        # await ctx.send("Command not found, please check the command and try again.")
     else:
         await ctx.send(f"An unexpected error occurred: {error}")
 
