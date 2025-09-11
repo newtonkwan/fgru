@@ -596,7 +596,6 @@ async def fetch_and_post_recent_activity():
     last_checked_time = get_last_checked_time(name='last_activity_time')
 
     url = f"https://templeosrs.com/api/group_achievements.php?id={group_id}"
-    print(url)
     try:
         response = requests.get(url)
         response.raise_for_status()
