@@ -480,12 +480,15 @@ async def join_date(ctx, *, username: str = None):
 
 @bot.command(name="logcount")
 @commands.has_role("Member")
-async def get_logcount(ctx, *, username: str = "Oldton"):
+async def get_logcount(ctx, *, username: str = None):
     """
     Show how many collection logs a player has completed.
     Usage: ~logcount <username> or ~logcount (defaults to 'Oldton')
     """
-    url = f"https://templeosrs.com/api/collection-log/player_collection_log.php?player={username}"
+
+    target_name = username if username else ctx.author.display_name
+
+    url = f"https://templeosrs.com/api/collection-log/player_collection_log.php?player={target_name}"
 
     try:
         response = requests.get(url)
@@ -494,25 +497,28 @@ async def get_logcount(ctx, *, username: str = "Oldton"):
         player_data = data.get("data", {})
 
         if not isinstance(player_data, dict):
-            return await ctx.send(f"Player '{username}' not found or response was malformed.")
+            return await ctx.send(f"Player '{target_name}' not found or response was malformed.")
 
         count = player_data.get("total_collections_finished")
         if count is None:
-            return await ctx.send(f"Could not find log count for '{username}'.")
+            return await ctx.send(f"Could not find log count for '{target_name}'.")
 
-        await ctx.send(f"{username} has completed {count} collection logs.")
+        await ctx.send(f"{target_name} has completed {count} collection logs.")
 
     except Exception as e:
-        await ctx.send(f"Error fetching log count for '{username}': {e}")
+        await ctx.send(f"Error fetching log count for '{target_name}': {e}")
 
 @bot.command(name="ehc")
 @commands.has_role("Member")
-async def get_ehc(ctx, *, username: str = "Oldton"):
+async def get_ehc(ctx, *, username: str = None):
     """
     Show a player's EHC (Gilded algorithm).
     Usage: ~ehc <username> or ~ehc (defaults to 'Oldton')
     """
-    url = f"https://templeosrs.com/api/collection-log/player_collection_log.php?player={username}"
+    
+    target_name = username if username else ctx.author.display_name
+
+    url = f"https://templeosrs.com/api/collection-log/player_collection_log.php?player={target_name}"
 
     try:
         response = requests.get(url)
@@ -521,16 +527,16 @@ async def get_ehc(ctx, *, username: str = "Oldton"):
         player_data = data.get("data", {})
 
         if not isinstance(player_data, dict):
-            return await ctx.send(f"Player '{username}' not found or response was malformed.")
+            return await ctx.send(f"Player '{target_name}' not found or response was malformed.")
 
         ehc = player_data.get("ehc_gilded")
         if ehc is None:
-            return await ctx.send(f"Could not find EHC for '{username}'.")
+            return await ctx.send(f"Could not find EHC for '{target_name}'.")
 
-        await ctx.send(f"{username} has an EHC (Gilded) of {ehc:.2f} hours.")
+        await ctx.send(f"{target_name} has an EHC (Gilded) of {ehc:.2f} hours.")
 
     except Exception as e:
-        await ctx.send(f"Error fetching EHC for '{username}': {e}")
+        await ctx.send(f"Error fetching EHC for '{target_name}': {e}")
 
 
 @tasks.loop(seconds=60)
