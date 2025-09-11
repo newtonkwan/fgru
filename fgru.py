@@ -503,7 +503,7 @@ async def get_logcount(ctx, *, username: str = None):
         if count is None:
             return await ctx.send(f"Could not find log count for '{target_name}'.")
 
-        await ctx.send(f"{target_name} has completed {count} collection logs.")
+        await ctx.send(f"{target_name} has completed {count:,} collection logs.")
 
     except Exception as e:
         await ctx.send(f"Error fetching log count for '{target_name}': {e}")
@@ -533,7 +533,7 @@ async def get_ehc(ctx, *, username: str = None):
         if ehc is None:
             return await ctx.send(f"Could not find EHC for '{target_name}'.")
 
-        await ctx.send(f"{target_name} has an EHC (Gilded) of {round(ehc)} hours.")
+        await ctx.send(f"{target_name} has an EHC (Gilded) of {round(ehc):,} hours.")
 
     except Exception as e:
         await ctx.send(f"Error fetching EHC for '{target_name}': {e}")
