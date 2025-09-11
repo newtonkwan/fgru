@@ -41,6 +41,7 @@ else:
 allowed_role = "Staff"
 
 group_id = 2802  # group ID. Log Chasers: 2802, FGRU: 2112
+# group_id = 2112  # group ID. Log Chasers: 2802, FGRU: 2112
 
 def save_last_checked_time(name, timestamp):
     try:
@@ -291,6 +292,10 @@ def get_player_info(group_id: int = 2802, username: str = "Oldton") -> dict:
 
     return error_result("PlayerNotFound", f"Player '{username}' is not in Log Chasers.")
 
+
+
+
+
 # player_info = get_player_info()
 # pprint(player_info, sort_dicts=False)
 
@@ -473,6 +478,61 @@ async def join_date(ctx, *, username: str = None):
 
     await ctx.send(f"{target_name} joined on {join_date_str}.")
 
+@bot.command(name="logcount")
+@commands.has_role("Member")
+async def get_logcount(ctx, *, username: str = "Oldton"):
+    """
+    Show how many collection logs a player has completed.
+    Usage: ~logcount <username> or ~logcount (defaults to 'Oldton')
+    """
+    url = f"https://templeosrs.com/api/collection-log/player_collection_log.php?player={username}"
+
+    try:
+        response = requests.get(url)
+        response.raise_for_status()
+        data = response.json()
+        player_data = data.get("data", {})
+
+        if not isinstance(player_data, dict):
+            return await ctx.send(f"Player '{username}' not found or response was malformed.")
+
+        count = player_data.get("total_collections_finished")
+        if count is None:
+            return await ctx.send(f"Could not find log count for '{username}'.")
+
+        await ctx.send(f"{username} has completed {count} collection logs.")
+
+    except Exception as e:
+        await ctx.send(f"Error fetching log count for '{username}': {e}")
+
+@bot.command(name="ehc")
+@commands.has_role("Member")
+async def get_ehc(ctx, *, username: str = "Oldton"):
+    """
+    Show a player's EHC (Gilded algorithm).
+    Usage: ~ehc <username> or ~ehc (defaults to 'Oldton')
+    """
+    url = f"https://templeosrs.com/api/collection-log/player_collection_log.php?player={username}"
+
+    try:
+        response = requests.get(url)
+        response.raise_for_status()
+        data = response.json()
+        player_data = data.get("data", {})
+
+        if not isinstance(player_data, dict):
+            return await ctx.send(f"Player '{username}' not found or response was malformed.")
+
+        ehc = player_data.get("ehc_gilded")
+        if ehc is None:
+            return await ctx.send(f"Could not find EHC for '{username}'.")
+
+        await ctx.send(f"{username} has an EHC (Gilded) of {ehc:.2f} hours.")
+
+    except Exception as e:
+        await ctx.send(f"Error fetching EHC for '{username}': {e}")
+
+
 @tasks.loop(seconds=60)
 async def fetch_and_post_recent_logs(count: int = 1, only_notable: bool = True):
     current_time = datetime.now()
@@ -536,6 +596,7 @@ async def fetch_and_post_recent_activity():
     last_checked_time = get_last_checked_time(name='last_activity_time')
 
     url = f"https://templeosrs.com/api/group_achievements.php?id={group_id}"
+    print(url)
     try:
         response = requests.get(url)
         response.raise_for_status()
