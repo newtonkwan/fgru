@@ -548,9 +548,9 @@ async def get_ehc(ctx, *, username: str = None):
 
 @bot.command(name="2025")
 @commands.has_role("Staff")
-async def get_2025_stats(ctx):
+# async def get_2025_stats(ctx):
 # uncomment if you want to let other people check someone's 2025 stats
-# async def get_2025_stats(ctx, *, username: str = None):
+async def get_2025_stats(ctx, *, username: str = None):
     # TODO: Allow someone else to check someone's year of clogs? 
     """
     Show's the yearly summary of the a member from 2025
@@ -559,11 +559,12 @@ async def get_2025_stats(ctx):
     """
     
     # Uncomment if we want to allow you to check other people's years
-    # target_name = username if username else ctx.author.display_name
-    target_name = ctx.author.display_name
+    target_name = username if username else ctx.author.display_name
+    # target_name = ctx.author.display_name
 
     await ctx.send(f"Generating **Year in OSRS 2025** for `{target_name}`...")
-    await asyncio.sleep(3.5)  # Simulate processing time
+    # TODO: Do we really want to have a simulation time here...
+    await asyncio.sleep(2.5)  # Simulate processing time
 
     # url = f"https://templeosrs.com/api/collection-log/player_collection_log.php?player={target_name}"
     ts_2025_end = 1767254399 # Timestamp for December 31, 2025 23:59:59
@@ -674,8 +675,24 @@ async def get_2025_stats(ctx):
 
             # await ctx.send(f"```#Year of OSRS 2025 Summary for {target_name}```")
 
+            # Get total 
+            # TODO: fix total gained calculations
+            total_gained_2025 = ehc_gained_2025 + ehp_gained_2025 + ehb_gained_2025
+            total_gained_2024 = ehc_gained_2024 + ehp_gained_2024 + ehb_gained_2024
+            total_percent_difference = ((total_gained_2025 - total_gained_2024) / total_gained_2024) * 100 if total_gained_2024 != 0 else 0
+
         # Iron 
         elif gamemode == 1:
+
+            # TODO: Add when EHC is available
+            start_2025_ehc = 0
+            start_2024_ehc = 0
+            end_2025_ehc = 0 
+
+            ehc_gained_2025 = end_2025_ehc - start_2025_ehc
+            ehc_gained_2024 = start_2025_ehc - start_2024_ehc
+            ehc_percent_difference = ((ehc_gained_2025 - ehc_gained_2024) / ehc_gained_2024) * 100 if ehc_gained_2024 != 0 else 0
+
             # Get EHP
             start_2025_ehp = player_data_2025_start.get("Im_ehp")
             start_2024_ehp = player_data_2024_start.get("Im_ehp")
@@ -706,6 +723,11 @@ async def get_2025_stats(ctx):
             # await ctx.send(f"{target_name} gained {round(ehb_gained_2024):,} EHB in 2024.")
 
             # await ctx.send(f"```#Year of OSRS 2025 Summary for {target_name}```")
+
+            # Get total 
+            total_gained_2025 = ehc_gained_2025 + ehp_gained_2025 + ehb_gained_2025
+            total_gained_2024 = ehc_gained_2024 + ehp_gained_2024 + ehb_gained_2024
+            total_percent_difference = ((total_gained_2025 - total_gained_2024) / total_gained_2024) * 100 if total_gained_2024 != 0 else 0
 
 
 
@@ -792,6 +814,30 @@ async def get_2025_stats(ctx):
             value=f"\u200b",
             inline=True
         )
+
+        embed.add_field(
+            name=f"Total", 
+            value=f"{round(total_gained_2025):,} hrs" if target_name != 'Oldton' else '1411 hrs',
+            # TODO: Add when EHC is available           
+            # value=f"{round(total_gained_2025):,} hrs",
+            inline=True
+        )
+
+        embed.add_field(
+            name="vs. 2024", 
+            value=f"{"{arrow} ".format(arrow="↑" if total_percent_difference >= 0 else "↓") + f"{abs(round(total_percent_difference)):,}%" if target_name != 'Oldton' else '↑ 36%'}",
+            # TODO: Add when EHC is available
+            # value="{arrow} ".format(arrow="↑" if total_percent_difference >= 0 else "↓") + f"{abs(round(total_percent_difference)):,}%",
+            inline=True
+        )
+
+        embed.add_field(
+            name="\u200b", 
+            value=f"\u200b",
+            inline=True
+        )
+
+        # TODO: Add a total of EHC, EHP, and EHB gained in 2025 
 
         # embed.add_field(
         #     name="Log Slots", 
