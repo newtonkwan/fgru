@@ -529,11 +529,17 @@ async def get_ehc(ctx, *, username: str = None):
         if not isinstance(player_data, dict):
             return await ctx.send(f"Player '{target_name}' not found or response was malformed.")
 
-        ehc = player_data.get("ehc_gilded")
+        # main = 0, iron = 1 
+        # Main 
+        if player_data.get("game_mode") == 0:
+            ehc = player_data.get("ehc_gilded")
+            await ctx.send(f"{target_name} has an EHC (Gilded) of {round(ehc):,} hours.")
+        # Iron 
+        elif player_data.get("game_mode") == 1:
+            ehc = player_data.get("ehc_gilded_im")
+            await ctx.send(f"{target_name} has an Iron EHC (Gilded) of {round(ehc):,} hours.")
         if ehc is None:
             return await ctx.send(f"Could not find EHC for '{target_name}'.")
-
-        await ctx.send(f"{target_name} has an EHC (Gilded) of {round(ehc):,} hours.")
 
     except Exception as e:
         await ctx.send(f"Error fetching EHC for '{target_name}': {e}")
