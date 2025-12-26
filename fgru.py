@@ -687,24 +687,32 @@ async def get_2025_stats(ctx, *, username: str = None):
             # Get EHP
             start_2025_ehp = player_data_2025_start.get("Overall_ehp")
             start_2024_ehp = player_data_2024_start.get("Overall_ehp")
+            if start_2024_ehp is None:
+                start_2024_ehp = 0
             end_2025_ehp = player_data_2025_end.get("Overall_ehp")
 
             # Get EHB 
             start_2025_ehb = player_data_2025_start.get("Ehb")
             start_2024_ehb = player_data_2024_start.get("Ehb")
-            end_2025_ehb = player_data_2025_end.get("Ehb")           
+            if start_2024_ehb is None:
+                start_2024_ehb = 0
+            end_2025_ehb = player_data_2025_end.get("Ehb")         
 
         # Iron 
         elif gamemode == 1:
             # Get EHP
             start_2025_ehp = player_data_2025_start.get("Im_ehp")
             start_2024_ehp = player_data_2024_start.get("Im_ehp")
+            if start_2024_ehp is None:
+                start_2024_ehp = 0
             end_2025_ehp = player_data_2025_end.get("Im_ehp")
 
             # Get EHB 
             start_2025_ehb = player_data_2025_start.get("Im_ehb")
             start_2024_ehb = player_data_2024_start.get("Im_ehb")
-            end_2025_ehb = player_data_2025_end.get("Im_ehb")           
+            if start_2024_ehb is None:
+                start_2024_ehb = 0
+            end_2025_ehb = player_data_2025_end.get("Im_ehb")        
 
         # Calculate EHP stats
         ehp_gained_2025 = end_2025_ehp - start_2025_ehp
@@ -721,11 +729,6 @@ async def get_2025_stats(ctx, *, username: str = None):
         ehc_2025 = player_yearlygains.get("yearly_gains", 0)['2025']
         ehc_percent_difference = ((ehc_2025 - ehc_2024) / ehc_2024) * 100 if ehc_2024 != 0 else 0
 
-        # Handle errors with EHC data 
-        # Default message
-        ehc_message = f"{round(ehc_2025):,} hrs" if target_name != 'Oldton' else '828 hrs'
-        ehc_percent_difference_message = "{arrow} ".format(arrow="↑" if ehc_percent_difference >= 0 else "↓") + f"{abs(round(ehc_percent_difference)):,}%"
-        # ehc_percent_difference_message = "{arrow} ".format(arrow="↑" if ehp_percent_difference >= 0 else "↓") + f"{abs(round(ehc_percent_difference)):,}%" if target_name != 'Oldton' else '↑ 91%'
 
         # Calculate totals 
         total_gained_2025 = ehc_2025 + ehp_gained_2025 + ehb_gained_2025
@@ -735,6 +738,23 @@ async def get_2025_stats(ctx, *, username: str = None):
         total_message = f"{round(total_gained_2025):,} hrs" if target_name != 'Oldton' else '1411 hrs'
         total_percent_difference_message = f"{"{arrow} ".format(arrow="↑" if total_percent_difference >= 0 else "↓") + f"{abs(round(total_percent_difference)):,}%" if target_name != 'Oldton' else '↑ 36%'}"
 
+        # Handle errors with EHP data 
+        # Default message
+        ehp_percent_difference_message = "{arrow} ".format(arrow="↑" if ehp_percent_difference >= 0 else "↓") + f"{abs(round(ehp_percent_difference)):,}%"
+        if start_2024_ehp == None or start_2024_ehp == 0:
+            ehp_percent_difference_message = "N/A"
+            total_percent_difference_message = "N/A"
+        # Handle errors with EHB data 
+        # Default message
+        ehb_percent_difference_message = "{arrow} ".format(arrow="↑" if ehb_percent_difference >= 0 else "↓") + f"{abs(round(ehb_percent_difference)):,}%"
+        if start_2024_ehb == None or start_2024_ehb == 0:
+            ehb_percent_difference_message = "N/A"
+            total_percent_difference_message = "N/A"
+        # Handle errors with EHC data 
+        # Default message
+        ehc_message = f"{round(ehc_2025):,} hrs" if target_name != 'Oldton' else '828 hrs'
+        ehc_percent_difference_message = "{arrow} ".format(arrow="↑" if ehc_percent_difference >= 0 else "↓") + f"{abs(round(ehc_percent_difference)):,}%"
+        # ehc_percent_difference_message = "{arrow} ".format(arrow="↑" if ehp_percent_difference >= 0 else "↓") + f"{abs(round(ehc_percent_difference)):,}%" if target_name != 'Oldton' else '↑ 91%'
 
         # Users has no 2025 EHC (data filtered out by TempleOSRS) 
         if ehc_2025 == 0: 
@@ -775,7 +795,7 @@ async def get_2025_stats(ctx, *, username: str = None):
     
         embed.add_field(
             name=f"vs. 2024", 
-            value="{arrow} ".format(arrow="↑" if ehp_percent_difference >= 0 else "↓") + f"{abs(round(ehp_percent_difference)):,}%",
+            value=ehp_percent_difference_message,
             inline=True 
         )
 
@@ -793,7 +813,7 @@ async def get_2025_stats(ctx, *, username: str = None):
 
         embed.add_field(
             name="vs. 2024", 
-            value="{arrow} ".format(arrow="↑" if ehb_percent_difference >= 0 else "↓") + f"{abs(round(ehb_percent_difference)):,}%",
+            value=ehb_percent_difference_message,
             inline=True
         )
 
