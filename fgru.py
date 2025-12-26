@@ -687,40 +687,47 @@ async def get_2025_stats(ctx, *, username: str = None):
             # Get EHP
             start_2025_ehp = player_data_2025_start.get("Overall_ehp")
             start_2024_ehp = player_data_2024_start.get("Overall_ehp")
-            if start_2024_ehp is None:
-                start_2024_ehp = 0
             end_2025_ehp = player_data_2025_end.get("Overall_ehp")
 
             # Get EHB 
             start_2025_ehb = player_data_2025_start.get("Ehb")
             start_2024_ehb = player_data_2024_start.get("Ehb")
-            if start_2024_ehb is None:
-                start_2024_ehb = 0
             end_2025_ehb = player_data_2025_end.get("Ehb")         
 
         # Iron 
-        elif gamemode == 1:
+        elif gamemode in [1, 2, 3]:  # Ironman, Hardcore Ironman, Ultimate Ironman
             # Get EHP
             start_2025_ehp = player_data_2025_start.get("Im_ehp")
             start_2024_ehp = player_data_2024_start.get("Im_ehp")
-            if start_2024_ehp is None:
-                start_2024_ehp = 0
             end_2025_ehp = player_data_2025_end.get("Im_ehp")
 
             # Get EHB 
             start_2025_ehb = player_data_2025_start.get("Im_ehb")
             start_2024_ehb = player_data_2024_start.get("Im_ehb")
-            if start_2024_ehb is None:
-                start_2024_ehb = 0
             end_2025_ehb = player_data_2025_end.get("Im_ehb")        
+
+        # info 
+        print(start_2024_ehp, start_2025_ehp, end_2025_ehp)
+        print(start_2024_ehb, start_2025_ehb, end_2025_ehb)
+        # Catch errors if Temple data does not exist
+        if start_2024_ehp is None:
+            start_2024_ehp = 0
+        if start_2025_ehp is None:
+            start_2025_ehp = 0
+        if start_2024_ehb is None:
+            start_2024_ehb = 0    
+        if start_2025_ehb is None:
+            start_2025_ehb = 0   
 
         # Calculate EHP stats
         ehp_gained_2025 = end_2025_ehp - start_2025_ehp
+        # TODO: If no data for 2025, then get the earliest data point
         ehp_gained_2024 = start_2025_ehp - start_2024_ehp
         ehp_percent_difference = ((ehp_gained_2025 - ehp_gained_2024) / ehp_gained_2024) * 100 if ehp_gained_2024 != 0 else 0
 
         # Calculate EHB stats
         ehb_gained_2025 = end_2025_ehb - start_2025_ehb
+        # TODO: If no data for 2025, then get the earliest data point
         ehb_gained_2024 = start_2025_ehb - start_2024_ehb
         ehb_percent_difference = ((ehb_gained_2025 - ehb_gained_2024) / ehb_gained_2024) * 100 if ehb_gained_2024 != 0 else 0
         
@@ -729,27 +736,40 @@ async def get_2025_stats(ctx, *, username: str = None):
         ehc_2025 = player_yearlygains.get("yearly_gains", 0)['2025']
         ehc_percent_difference = ((ehc_2025 - ehc_2024) / ehc_2024) * 100 if ehc_2024 != 0 else 0
 
-
         # Calculate totals 
         total_gained_2025 = ehc_2025 + ehp_gained_2025 + ehb_gained_2025
         total_gained_2024 = ehc_2024 + ehp_gained_2024 + ehb_gained_2024
         total_percent_difference = ((total_gained_2025 - total_gained_2024) / total_gained_2024) * 100 if total_gained_2024 != 0 else 0
 
         total_message = f"{round(total_gained_2025):,} hrs" if target_name != 'Oldton' else '1411 hrs'
+        if start_2025_ehp == 0 or start_2025_ehb == 0:
+            total_message = "N/A"
         total_percent_difference_message = f"{"{arrow} ".format(arrow="↑" if total_percent_difference >= 0 else "↓") + f"{abs(round(total_percent_difference)):,}%" if target_name != 'Oldton' else '↑ 36%'}"
 
         # Handle errors with EHP data 
         # Default message
+        ehp_message = f"{round(ehp_gained_2025):,} hrs"
         ehp_percent_difference_message = "{arrow} ".format(arrow="↑" if ehp_percent_difference >= 0 else "↓") + f"{abs(round(ehp_percent_difference)):,}%"
         if start_2024_ehp == None or start_2024_ehp == 0:
             ehp_percent_difference_message = "N/A"
             total_percent_difference_message = "N/A"
+        if start_2025_ehp is None or start_2025_ehp == 0:
+            ehp_message = "N/A"
+            ehp_percent_difference_message = "N/A"
+            total_percent_difference_message = "N/A"
+
         # Handle errors with EHB data 
         # Default message
+        ehb_message = f"{round(ehb_gained_2025):,} hrs"
         ehb_percent_difference_message = "{arrow} ".format(arrow="↑" if ehb_percent_difference >= 0 else "↓") + f"{abs(round(ehb_percent_difference)):,}%"
         if start_2024_ehb == None or start_2024_ehb == 0:
             ehb_percent_difference_message = "N/A"
             total_percent_difference_message = "N/A"
+        if start_2025_ehb is None or start_2025_ehb == 0:
+            ehb_message = "N/A"
+            ehb_percent_difference_message = "N/A"
+            total_percent_difference_message = "N/A"
+
         # Handle errors with EHC data 
         # Default message
         ehc_message = f"{round(ehc_2025):,} hrs" if target_name != 'Oldton' else '828 hrs'
@@ -789,7 +809,7 @@ async def get_2025_stats(ctx, *, username: str = None):
 
         embed.add_field(
             name=f"EHP", 
-            value=f"{round(ehp_gained_2025):,} hrs", 
+            value=ehp_message,
             inline=True
         )
     
@@ -807,7 +827,7 @@ async def get_2025_stats(ctx, *, username: str = None):
 
         embed.add_field(
             name=f"EHB", 
-            value=f"{round(ehb_gained_2025):,} hrs",
+            value=ehb_message,
             inline=True
         )
 
