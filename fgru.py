@@ -7,6 +7,7 @@ import os
 import re
 import requests
 from datetime import datetime, timezone
+from PIL import Image, ImageDraw, ImageFont
 
 
 # Setup argparse to handle command line arguments
@@ -556,6 +557,48 @@ async def get_2025_stats(ctx, *, username: str = None):
     Show's the yearly summary of the a member from 2025
     Usage: ~2025 <username> or ~2025 (defaults to your display name)
     # TODO: for now, only allowing members of the cc to check their own stats. 
+
+    Top 25 EHC 2025
+    username    2025_ehc_gain
+    Blom    5087.6172
+    Browntree    3852.7013
+    Kongherodes    2980.7925
+    Siptar    2861.8267
+    Swerve Q P    2787.4667
+    Jabbau    2761.2737
+    Jiqonix    2745.9797
+    Kaiserbruno    2739.8936
+    Weaki    2721.5772
+    Cewl Hwip    2648.1867
+    Biglenz    2640.2642
+    Karilol    2627.5611
+    Salii    2585.7048
+    Retrohiili    2533.8368
+    Fehz    2497.6902
+    Ice Caves    2487.0152
+    Bioterrorism    2477.0278
+    Tails    2444.4198
+    Paulest Paul    2410.9695
+    Hypermark    2406.2316
+    T Ylor    2388.1998
+    Ir0n Crow    2385.9294
+    Xiny    2366.9717
+    Yak Of Iron    2348.1275
+    Highnoobjhin    2333.8297
+
+    Log Chasers | Top 10 EHC 2025 
+    1.  Browntree     3852.7013
+    2.  Siptar        2861.8267
+    3.  werve q p     2787.4667
+    4.  Jabbau        2761.2737
+    5.  Weaki         2721.5772
+    6.  Karilol       2627.5611
+    7.  Retrohiili    2533.8368
+    8.  Ice Caves     2487.0152
+    9.  Bioterrorism  2477.0278
+    10. Tails         2444.4198
+
+    If people want to have their sync fixed, just ask Mikael 
     """
     
     # Uncomment if we want to allow you to check other people's years
@@ -564,7 +607,7 @@ async def get_2025_stats(ctx, *, username: str = None):
 
     await ctx.send(f"Generating **Year in OSRS 2025** for `{target_name}`...")
     # TODO: Do we really want to have a simulation time here...
-    await asyncio.sleep(2.5)  # Simulate processing time
+    # await asyncio.sleep(2.5)  # Simulate processing time
 
     # url = f"https://templeosrs.com/api/collection-log/player_collection_log.php?player={target_name}"
     ts_2025_end = 1767254399 # Timestamp for December 31, 2025 23:59:59
@@ -575,6 +618,8 @@ async def get_2025_stats(ctx, *, username: str = None):
     url_2025_end = f"https://templeosrs.com/api/player_stats.php?player={target_name}&date={ts_2025_end}&bosses=1"
     url_2025_start = f"https://templeosrs.com/api/player_stats.php?player={target_name}&date={ts_2025_start}&bosses=1"
     url_2024_start = f"https://templeosrs.com/api/player_stats.php?player={target_name}&date={ts_2024_start}&bosses=1"
+
+    url_ehc_yearlygains = f"https://templeosrs.com/api/collection-log/player_collection_log.php?player={target_name}&yearlygains=1"
 
     # TODO: 
     # Get current value of 2025 
@@ -607,14 +652,19 @@ async def get_2025_stats(ctx, *, username: str = None):
     #         return await _send_error(f"Sorry, `{target_name}` is not a member of Log Chasers.")
     #     return await _send_error(f"error: {player_info['message']}")
 
+    
+    
+
     try:
         response_2025_end = requests.get(url_2025_end)
         response_2025_start = requests.get(url_2025_start)
         response_2024_start = requests.get(url_2024_start)
+        response_yearlygains = requests.get(url_ehc_yearlygains)
         response_2025_end.raise_for_status()
         data_2025_end = response_2025_end.json()
         data_2025_start = response_2025_start.json()
         data_2024_start = response_2024_start.json()
+        data_yearlygains = response_yearlygains.json()
         player_data_2025_end = data_2025_end.get("data", {})
         # print(player_data_2025_end)
         # print()
@@ -624,142 +674,91 @@ async def get_2025_stats(ctx, *, username: str = None):
         player_data_2024_start = data_2024_start.get("data", {})
         # print(player_data_2024_start)
         # print()
+        player_yearlygains = data_yearlygains.get("data", {})
+        print(player_yearlygains)
 
         if not isinstance(player_data_2025_end, dict):
             return await ctx.send(f"Player '{target_name}' not found or response was malformed.")
 
         # main = 0, iron = 1 
         gamemode = player_data_2025_end["info"]["Game mode"]
+
         # Main 
-
         if gamemode == 0:
-            # Get EHC 
-            # TODO: Add when EHC is available
-            start_2025_ehc = 0
-            start_2024_ehc = 0
-            end_2025_ehc = 0 
-
-            ehc_gained_2025 = end_2025_ehc - start_2025_ehc
-            ehc_gained_2024 = start_2025_ehc - start_2024_ehc
-            ehc_percent_difference = ((ehc_gained_2025 - ehc_gained_2024) / ehc_gained_2024) * 100 if ehc_gained_2024 != 0 else 0
-
-        
             # Get EHP
             start_2025_ehp = player_data_2025_start.get("Overall_ehp")
             start_2024_ehp = player_data_2024_start.get("Overall_ehp")
             end_2025_ehp = player_data_2025_end.get("Overall_ehp")
-            # await ctx.send(f"{target_name} had {round(end_2025_ehp):,} EHP at the end of 2025.")
-            # await ctx.send(f"{target_name} had {round(start_2025_ehp):,} EHP at the start of 2025.")
-            # await ctx.send(f"{target_name} had {round(start_2024_ehp):,} EHP at the start of 2024.")
 
-
-            ehp_gained_2025 = end_2025_ehp - start_2025_ehp
-            ehp_gained_2024 = start_2025_ehp - start_2024_ehp
-            ehp_percent_difference = ((ehp_gained_2025 - ehp_gained_2024) / ehp_gained_2024) * 100 if ehp_gained_2024 != 0 else 0
-            # await ctx.send(f"{target_name} gained {round(ehp_gained_2025):,} EHP in 2025 | {round(ehp_percent_difference):,}% vs. 2024.")
-            # await ctx.send(f"{target_name} gained {round(ehp_gained_2024):,} EHP in 2024.")
-            
             # Get EHB 
             start_2025_ehb = player_data_2025_start.get("Ehb")
             start_2024_ehb = player_data_2024_start.get("Ehb")
             end_2025_ehb = player_data_2025_end.get("Ehb")           
-            # await ctx.send(f"{target_name} had {round(end_2025_ehb):,} EHB at the end of 2025.")
-            # await ctx.send(f"{target_name} had {round(start_2025_ehb):,} EHB at the start of 2025.")
-            # await ctx.send(f"{target_name} had {round(start_2024_ehb):,} EHB at the start of 2024.")
-
-            ehb_gained_2025 = end_2025_ehb - start_2025_ehb
-            ehb_gained_2024 = start_2025_ehb - start_2024_ehb
-            ehb_percent_difference = ((ehb_gained_2025 - ehb_gained_2024) / ehb_gained_2024) * 100 if ehb_gained_2024 != 0 else 0
-            # await ctx.send(f"{target_name} gained {round(ehb_gained_2025):,} EHB in 2025 | {round(ehb_percent_difference):,}% vs. 2024.")
-            # await ctx.send(f"{target_name} gained {round(ehb_gained_2024):,} EHB in 2024.")
-
-            # await ctx.send(f"```#Year of OSRS 2025 Summary for {target_name}```")
-
-            # Get total 
-            # TODO: fix total gained calculations
-            total_gained_2025 = ehc_gained_2025 + ehp_gained_2025 + ehb_gained_2025
-            total_gained_2024 = ehc_gained_2024 + ehp_gained_2024 + ehb_gained_2024
-            total_percent_difference = ((total_gained_2025 - total_gained_2024) / total_gained_2024) * 100 if total_gained_2024 != 0 else 0
 
         # Iron 
         elif gamemode == 1:
-
-            # TODO: Add when EHC is available
-            start_2025_ehc = 0
-            start_2024_ehc = 0
-            end_2025_ehc = 0 
-
-            ehc_gained_2025 = end_2025_ehc - start_2025_ehc
-            ehc_gained_2024 = start_2025_ehc - start_2024_ehc
-            ehc_percent_difference = ((ehc_gained_2025 - ehc_gained_2024) / ehc_gained_2024) * 100 if ehc_gained_2024 != 0 else 0
-
             # Get EHP
             start_2025_ehp = player_data_2025_start.get("Im_ehp")
             start_2024_ehp = player_data_2024_start.get("Im_ehp")
             end_2025_ehp = player_data_2025_end.get("Im_ehp")
-            # await ctx.send(f"{target_name} had {round(end_2025_ehp):,} EHP at the end of 2025.")
-            # await ctx.send(f"{target_name} had {round(start_2025_ehp):,} EHP at the start of 2025.")
-            # await ctx.send(f"{target_name} had {round(start_2024_ehp):,} EHP at the start of 2024.")
 
-
-            ehp_gained_2025 = end_2025_ehp - start_2025_ehp
-            ehp_gained_2024 = start_2025_ehp - start_2024_ehp
-            ehp_percent_difference = ((ehp_gained_2025 - ehp_gained_2024) / ehp_gained_2024) * 100 if ehp_gained_2024 != 0 else 0
-            # await ctx.send(f"{target_name} gained {round(ehp_gained_2025):,} EHP in 2025 | {round(ehp_percent_difference):,}% vs. 2024.")
-            # await ctx.send(f"{target_name} gained {round(ehp_gained_2024):,} EHP in 2024.")
-            
             # Get EHB 
             start_2025_ehb = player_data_2025_start.get("Im_ehb")
             start_2024_ehb = player_data_2024_start.get("Im_ehb")
             end_2025_ehb = player_data_2025_end.get("Im_ehb")           
-            # await ctx.send(f"{target_name} had {round(end_2025_ehb):,} EHB at the end of 2025.")
-            # await ctx.send(f"{target_name} had {round(start_2025_ehb):,} EHB at the start of 2025.")
-            # await ctx.send(f"{target_name} had {round(start_2024_ehb):,} EHB at the start of 2024.")
 
-            ehb_gained_2025 = end_2025_ehb - start_2025_ehb
-            ehb_gained_2024 = start_2025_ehb - start_2024_ehb
-            ehb_percent_difference = ((ehb_gained_2025 - ehb_gained_2024) / ehb_gained_2024) * 100 if ehb_gained_2024 != 0 else 0
-            # await ctx.send(f"{target_name} gained {round(ehb_gained_2025):,} EHB in 2025 | {round(ehb_percent_difference):,}% vs. 2024.")
-            # await ctx.send(f"{target_name} gained {round(ehb_gained_2024):,} EHB in 2024.")
+        # Calculate EHP stats
+        ehp_gained_2025 = end_2025_ehp - start_2025_ehp
+        ehp_gained_2024 = start_2025_ehp - start_2024_ehp
+        ehp_percent_difference = ((ehp_gained_2025 - ehp_gained_2024) / ehp_gained_2024) * 100 if ehp_gained_2024 != 0 else 0
 
-            # await ctx.send(f"```#Year of OSRS 2025 Summary for {target_name}```")
+        # Calculate EHB stats
+        ehb_gained_2025 = end_2025_ehb - start_2025_ehb
+        ehb_gained_2024 = start_2025_ehb - start_2024_ehb
+        ehb_percent_difference = ((ehb_gained_2025 - ehb_gained_2024) / ehb_gained_2024) * 100 if ehb_gained_2024 != 0 else 0
+        
+        # Calculate EHC stats
+        ehc_2024 = player_yearlygains.get("yearly_gains", 0)['2024']
+        ehc_2025 = player_yearlygains.get("yearly_gains", 0)['2025']
+        ehc_percent_difference = ((ehc_2025 - ehc_2024) / ehc_2024) * 100 if ehc_2024 != 0 else 0
 
-            # Get total 
-            total_gained_2025 = ehc_gained_2025 + ehp_gained_2025 + ehb_gained_2025
-            total_gained_2024 = ehc_gained_2024 + ehp_gained_2024 + ehb_gained_2024
-            total_percent_difference = ((total_gained_2025 - total_gained_2024) / total_gained_2024) * 100 if total_gained_2024 != 0 else 0
+        # Handle errors with EHC data 
+        # Default message
+        ehc_message = f"{round(ehc_2025):,} hrs" if target_name != 'Oldton' else '828 hrs'
+        ehc_percent_difference_message = "{arrow} ".format(arrow="↑" if ehc_percent_difference >= 0 else "↓") + f"{abs(round(ehc_percent_difference)):,}%"
+        # ehc_percent_difference_message = "{arrow} ".format(arrow="↑" if ehp_percent_difference >= 0 else "↓") + f"{abs(round(ehc_percent_difference)):,}%" if target_name != 'Oldton' else '↑ 91%'
+
+        # Calculate totals 
+        total_gained_2025 = ehc_2025 + ehp_gained_2025 + ehb_gained_2025
+        total_gained_2024 = ehc_2024 + ehp_gained_2024 + ehb_gained_2024
+        total_percent_difference = ((total_gained_2025 - total_gained_2024) / total_gained_2024) * 100 if total_gained_2024 != 0 else 0
+
+        total_message = f"{round(total_gained_2025):,} hrs" if target_name != 'Oldton' else '1411 hrs'
+        total_percent_difference_message = f"{"{arrow} ".format(arrow="↑" if total_percent_difference >= 0 else "↓") + f"{abs(round(total_percent_difference)):,}%" if target_name != 'Oldton' else '↑ 36%'}"
 
 
+        # Users has no 2025 EHC (data filtered out by TempleOSRS) 
+        if ehc_2025 == 0: 
+            ehc_message = "N/A"
+        # User has no 2024 EHC (data filtered out by TempleOSRS) 
+        # if ehc_2024 == 0 and target_name != 'Oldton': 
+        if ehc_2024 == 0: 
+            ehc_percent_difference_message = "N/A"
+            total_percent_difference_message = "N/A"
 
+        # Create the embed 
         embed = discord.Embed(title = f"{target_name}", color=discord.Color.dark_green())
-
         embed.set_author(name=f"Year in OSRS 2025", icon_url=ctx.author.display_avatar.url)
-
-        # down arrow ↓
-        # up arrow ↑
-
         embed.set_thumbnail(url=ctx.author.display_avatar.url)
-
         embed.add_field(
             name=f"EHC", 
-            value=f"{'N/A' if target_name != 'Oldton' else '828 hrs'}",
-            # TODO: Add when EHC is available
-            # value=f"{round(ehc_gained_2025):,} hrs",
+            value=ehc_message,
             inline=True
         )
-
-        # Squish on one line
-        # embed.add_field(
-        #     name=f"EHC", 
-        #     value=f"{round(ehc_gained_2025):,} hrs" + f" ({"↑ " if ehc_percent_difference >= 0 else "↓ "}" + f"{abs(round(ehc_percent_difference)):,}% vs. 2024)", 
-        #     inline=False
-        # )
     
         embed.add_field(
             name=f"vs. 2024", 
-            value=f"{'N/A' if target_name != 'Oldton' else '↑ 91%'}",
-            # TODO: Add when EHC is available
-            # value="{arrow} ".format(arrow="↑" if ehc_percent_difference >= 0 else "↓") + f"{abs(round(ehc_percent_difference)):,}%",
+            value=ehc_percent_difference_message,
             inline=True 
         )
 
@@ -768,11 +767,6 @@ async def get_2025_stats(ctx, *, username: str = None):
             value=f"\u200b",
             inline=True
         )
-        # embed.add_field(
-        #     name="Status", 
-        #     value=f"Veteran",
-        #     inline=True
-        # )
 
         embed.add_field(
             name=f"EHP", 
@@ -791,11 +785,6 @@ async def get_2025_stats(ctx, *, username: str = None):
             value=f"\u200b",
             inline=True
         )
-        # embed.add_field(
-        #     name="Rank", 
-        #     value=f"Smiley",
-        #     inline=True
-        # )
 
         embed.add_field(
             name=f"EHB", 
@@ -817,17 +806,13 @@ async def get_2025_stats(ctx, *, username: str = None):
 
         embed.add_field(
             name=f"Total", 
-            value=f"{round(total_gained_2025):,} hrs" if target_name != 'Oldton' else '1411 hrs',
-            # TODO: Add when EHC is available           
-            # value=f"{round(total_gained_2025):,} hrs",
+            value=total_message,
             inline=True
         )
 
         embed.add_field(
             name="vs. 2024", 
-            value=f"{"{arrow} ".format(arrow="↑" if total_percent_difference >= 0 else "↓") + f"{abs(round(total_percent_difference)):,}%" if target_name != 'Oldton' else '↑ 36%'}",
-            # TODO: Add when EHC is available
-            # value="{arrow} ".format(arrow="↑" if total_percent_difference >= 0 else "↓") + f"{abs(round(total_percent_difference)):,}%",
+            value=total_percent_difference_message,
             inline=True
         )
 
@@ -837,28 +822,9 @@ async def get_2025_stats(ctx, *, username: str = None):
             inline=True
         )
 
-        # TODO: Add a total of EHC, EHP, and EHB gained in 2025 
-
-        # embed.add_field(
-        #     name="Log Slots", 
-        #     value=f"1154",
-        #     inline=True
-        # )
-
-
-        # days_since_joining = 10 # Placeholder value
-        # embed.add_field(
-        #     name=f"You joined Log Chasers {days_since_joining} days ago!",
-        #     value="",
-        #     inline=False
-        # )
-        # Custom photo 
-        # embed.set_image(url="https://pbs.twimg.com/profile_banners/1845742406307651600/1728894418/1500x500")
-        # In game photo 
-        # embed.set_image(url="https://media.discordapp.net/attachments/1292357615573139487/1403805288556925018/CC2025JULY.png?ex=6945978e&is=6944460e&hm=30607cd8fcac926fd183adc936c0bf22a0d2c73268f396fffe2df3867a6b55fd&=&format=webp&quality=lossless&width=2081&height=1011")
-
         embed.set_footer(text="Log Chasers x TempleOSRS | Year in OSRS 2025", icon_url="https://pbs.twimg.com/profile_images/1845743084274876434/siKDEd4S_400x400.jpg")
         await ctx.send(embed=embed)
+
 
         if start_2025_ehp is None:
             return await ctx.send(f"Could not find stats for '{target_name}'.")
