@@ -7,7 +7,6 @@ import os
 import re
 import requests
 from datetime import datetime, timezone
-from PIL import Image, ImageDraw, ImageFont
 
 
 # Setup argparse to handle command line arguments
