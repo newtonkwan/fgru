@@ -547,7 +547,7 @@ async def get_ehc(ctx, *, username: str = None):
 
 
 @bot.command(name="2025")
-@commands.has_role("Staff")
+@commands.has_role("Member")
 # async def get_2025_stats(ctx):
 # uncomment if you want to let other people check someone's 2025 stats
 async def get_2025_stats(ctx, *, username: str = None):
